@@ -8,9 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import xyz.jiniux.aap.domain.catalog.*;
 import xyz.jiniux.aap.domain.catalog.exceptions.*;
 import xyz.jiniux.aap.domain.catalog.requests.*;
-import xyz.jiniux.aap.domain.catalog.results.AuthorRegistrationResult;
-import xyz.jiniux.aap.domain.catalog.results.FullCatalogBookResult;
-import xyz.jiniux.aap.domain.catalog.results.PublisherRegistrationResult;
+import xyz.jiniux.aap.domain.catalog.results.*;
 import xyz.jiniux.aap.support.ISBNCleaner;
 import xyz.jiniux.aap.validation.ValidAuthorId;
 import xyz.jiniux.aap.validation.ValidPublisherId;
@@ -36,7 +34,7 @@ public class CatalogController {
         return ResponseEntity.created(URI.create("/books/" + ISBNCleaner.clean(request.getIsbn()))).build();
     }
 
-    private static final int MAX_PAGE_SIZE = 50;
+    private static final int BOOK_SEARCH_MAX_PAGE_SIZE = 50;
 
     @GetMapping(value = "/books")
     public ResponseEntity<?> searchBooks(
@@ -44,7 +42,7 @@ public class CatalogController {
         @RequestParam(name = "page", defaultValue = "0", required = false) int page,
         @RequestParam(name = "pageSize", required = false) Integer pageSize)
     {
-        pageSize = pageSize == null ? MAX_PAGE_SIZE : Math.min(MAX_PAGE_SIZE, pageSize);
+        pageSize = pageSize == null ? BOOK_SEARCH_MAX_PAGE_SIZE : Math.min(BOOK_SEARCH_MAX_PAGE_SIZE, pageSize);
         BookSearchQuery searchQuery = new BookSearchQuery(query, pageSize, page);
 
         return ResponseEntity.ok(this.catalogService.searchBooks(searchQuery).entries());
@@ -133,5 +131,45 @@ public class CatalogController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping(value = "/publishers/{publisherId}")
+    public ResponseEntity<FullPublisherResult> getPublisher(
+        @PathVariable("publisherId") @NotNull @ValidPublisherId String publisherId
+    ) throws PublisherNotFoundException {
+        return ResponseEntity.ok(this.catalogService.getPublisher(publisherId));
+    }
 
+    private static final int PUBLISHER_SEARCH_MAX_PAGE_SIZE = 5;
+
+    @GetMapping(value = "/publishers")
+    public ResponseEntity<?> searchPublishers(
+        @RequestParam(name = "query", required = false) String query,
+        @RequestParam(name = "page", defaultValue = "0", required = false) int page,
+        @RequestParam(name = "pageSize", required = false) Integer pageSize)
+    {
+        pageSize = pageSize == null ? PUBLISHER_SEARCH_MAX_PAGE_SIZE : Math.min(PUBLISHER_SEARCH_MAX_PAGE_SIZE, pageSize);
+        PublisherSearchQuery searchQuery = new PublisherSearchQuery(query, pageSize, page);
+
+        return ResponseEntity.ok(this.catalogService.searchPublishers(searchQuery).entries());
+    }
+
+    @GetMapping(value = "/authors/{authorId}")
+    public ResponseEntity<FullAuthorResult> getAuthor(
+        @PathVariable("authorId") @NotNull @ValidPublisherId String authorId
+    ) throws AuthorNotFoundException {
+        return ResponseEntity.ok(this.catalogService.getAuthor(authorId));
+    }
+
+    private static final int AUTHORS_SEARCH_MAX_PAGE_SIZE = 5;
+
+    @GetMapping(value = "/authors")
+    public ResponseEntity<?> searchAuthors(
+        @RequestParam(name = "query", required = false) String query,
+        @RequestParam(name = "page", defaultValue = "0", required = false) int page,
+        @RequestParam(name = "pageSize", required = false) Integer pageSize)
+    {
+        pageSize = pageSize == null ? AUTHORS_SEARCH_MAX_PAGE_SIZE : Math.min(AUTHORS_SEARCH_MAX_PAGE_SIZE, pageSize);
+        AuthorSearchQuery searchQuery = new AuthorSearchQuery(query, pageSize, page);
+
+        return ResponseEntity.ok(this.catalogService.searchAuthors(searchQuery).entries());
+    }
 }

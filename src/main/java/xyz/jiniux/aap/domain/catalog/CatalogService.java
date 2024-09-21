@@ -8,10 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.jiniux.aap.domain.catalog.exceptions.*;
 import xyz.jiniux.aap.domain.catalog.requests.*;
-import xyz.jiniux.aap.domain.catalog.results.AuthorRegistrationResult;
-import xyz.jiniux.aap.domain.catalog.results.BookSearchResult;
-import xyz.jiniux.aap.domain.catalog.results.FullCatalogBookResult;
-import xyz.jiniux.aap.domain.catalog.results.PublisherRegistrationResult;
+import xyz.jiniux.aap.domain.catalog.results.*;
 import xyz.jiniux.aap.infrastructure.persistency.AuthorRepository;
 import xyz.jiniux.aap.infrastructure.persistency.CatalogBookRepository;
 import xyz.jiniux.aap.infrastructure.persistency.PublisherRepository;
@@ -58,10 +55,10 @@ public class CatalogService {
         if (book.getAuthorIds().isEmpty())
             throw new NoAuthorSpecifiedException();
 
-        if (authorRepository.findAllIds(book.getAuthorIds()).size() != book.getAuthorIds().size())
+        if (authorRepository.doAllAuthorsExist(book.getAuthorIds()))
             throw new AuthorsDoNotExistException(authorRepository.getMissingAuthorIds(book.getAuthorIds()));
 
-        if (publisherRepository.findByIdOptimistic(book.getPublisherId()) == null)
+        if (!publisherRepository.existsById(book.getPublisherId()))
             throw new PublisherDoesNotExistException(book.getPublisherId().toString());
 
         catalogBookRepository.save(book);
@@ -92,6 +89,8 @@ public class CatalogService {
     public void removeBook(@NonNull String isbn) throws BookNotFoundException {
         CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbn(isbn)
             .orElseThrow(() -> new BookNotFoundException(isbn));
+
+        entityManager.lock(catalogBook, LockModeType.OPTIMISTIC);
 
         catalogBookRepository.delete(catalogBook);
     }
@@ -143,6 +142,8 @@ public class CatalogService {
 
             catalogBook.setPublisher(publisher);
         }
+
+        catalogBookRepository.save(catalogBook);
     }
 
     @Transactional
@@ -178,6 +179,8 @@ public class CatalogService {
     {
         Author author = authorRepository.findById(Long.parseLong(authorId))
             .orElseThrow(() -> new AuthorNotFoundException(authorId));
+
+        entityManager.lock(author, LockModeType.OPTIMISTIC);
 
         boolean authorHasBooks = catalogBookRepository.countCatalogBookByAuthorId(author.getId()) > 0;
 
@@ -218,11 +221,58 @@ public class CatalogService {
         Publisher publisher = publisherRepository.findById(Long.parseLong(publisherId))
             .orElseThrow(() -> new PublisherNotFoundException(publisherId));
 
+        entityManager.lock(publisher, LockModeType.OPTIMISTIC);
+
         boolean publisherHasBooks = catalogBookRepository.countCatalogBookByPublisherId(publisher.getId()) > 0;
 
         if (publisherHasBooks)
             throw new PublisherHasBooksException(publisherId);
 
         publisherRepository.delete(publisher);
+    }
+
+    @Transactional(readOnly = true)
+    public FullPublisherResult getPublisher(@NonNull String publisherId)
+        throws PublisherNotFoundException
+    {
+        return publisherRepository.findById(Long.parseLong(publisherId))
+            .map(FullPublisherResultMapper.MAPPER::fromPublishers)
+            .orElseThrow(() -> new PublisherNotFoundException(publisherId));
+    }
+
+    @Transactional(readOnly = true)
+    public PublisherSearchResult searchPublishers(@NonNull PublisherSearchQuery query) {
+        Pageable pageable = Pageable.ofSize(query.getMaxResultCount()).withPage(query.getPage());
+
+        List<Publisher> publishers;
+        if (query.getQueryString() != null) {
+            publishers = publisherRepository.searchPublishers(query.getQueryString(), pageable);
+        } else {
+            publishers = publisherRepository.searchPublishers(pageable);
+        }
+
+        return new PublisherSearchResult(PublisherSearchResultMapper.MAPPER.fromPublishers(publishers));
+    }
+
+    @Transactional(readOnly = true)
+    public AuthorSearchResult searchAuthors(@NonNull AuthorSearchQuery searchQuery) {
+        Pageable pageable = Pageable.ofSize(searchQuery.getMaxResultCount()).withPage(searchQuery.getPage());
+
+        List<Author> authors;
+        if (searchQuery.getQueryString() != null) {
+            authors = authorRepository.searchAuthors(searchQuery.getQueryString(), pageable);
+        } else {
+            authors = authorRepository.searchAuthors(pageable);
+        }
+
+        return new AuthorSearchResult(AuthorSearchResultMapper.MAPPER.fromAuthors(authors));
+    }
+
+
+    @Transactional(readOnly = true)
+    public FullAuthorResult getAuthor(@NonNull String authorId) throws AuthorNotFoundException {
+        return authorRepository.findById(Long.parseLong(authorId))
+            .map(FullAuthorResultMapper.MAPPER::fromAuthor)
+            .orElseThrow(() -> new AuthorNotFoundException(authorId));
     }
 }
