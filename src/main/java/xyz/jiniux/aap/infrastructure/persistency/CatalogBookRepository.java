@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import xyz.jiniux.aap.model.CatalogBook;
+import xyz.jiniux.aap.domain.model.CatalogBook;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +29,14 @@ public interface CatalogBookRepository extends JpaRepository<CatalogBook, Intege
     long countCatalogBookByPublisherId(@Param("publisherId") Long publisherId);
 
     Optional<CatalogBook> findCatalogBookByIsbn(String isbn);
+
+    @Lock(LockModeType.PESSIMISTIC_READ)
+    @Query("select cb from CatalogBook cb where cb.isbn = :isbn")
+    Optional<CatalogBook> findCatalogBookByIsbnForShare(@Param("isbn") String isbn);
+
+    @Lock(LockModeType.PESSIMISTIC_FORCE_INCREMENT)
+    @Query("SELECT cb FROM CatalogBook cb WHERE cb.isbn = :isbn")
+    Optional<CatalogBook> findCatalogBookByIsbnForUpdate(String isbn);
 
     @Query("SELECT cb FROM CatalogBook cb")
     List<CatalogBook> searchCatalogBooks(Pageable pageable);

@@ -1,0 +1,66 @@
+package xyz.jiniux.aap.controllers;
+
+import org.antlr.v4.runtime.misc.Triple;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import xyz.jiniux.aap.domain.model.StockFormat;
+import xyz.jiniux.aap.domain.model.StockQuality;
+
+import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+public record ErrorResponse(String code, Object details) implements Serializable {
+    public static ErrorResponse createAuthorsNotFound(Set<String> authorIds) {
+        return new ErrorResponse("AUTHORS_DO_NOT_EXIST", Map.of("authorIds", authorIds));
+    }
+
+    public static ErrorResponse createIsbnAlreadyRegistered(String isbn) {
+        return new ErrorResponse("ISBN_ALREADY_REGISTERED", Map.of("isbn", isbn));
+    }
+
+    public static ErrorResponse createPublisherDoesNotExist(String publisherId) {
+        return new ErrorResponse("PUBLISHER_DOES_NOT_EXIST", Map.of("publisherId", publisherId));
+    }
+
+    public static ErrorResponse createBookNotFound(String isbn) {
+        return new ErrorResponse("BOOK_NOT_FOUND", Map.of("isbn", isbn));
+    }
+
+    public static ErrorResponse createDataIntegrityViolation() {
+        return new ErrorResponse("DATA_INTEGRITY_VIOLATION", Map.of());
+    }
+
+    public static ErrorResponse createConcurrentModificationOccurred() {
+        return new ErrorResponse("CONCURRENT_MODIFICATION_OCCURRED", Map.of());
+    }
+
+    public static ErrorResponse createPublisherNotFound(String publisherId) {
+        return new ErrorResponse("PUBLISHER_NOT_FOUND", Map.of("publisherId", publisherId));
+    }
+
+    public static ErrorResponse createPublisherHasBooks(String publisherId) {
+        return new ErrorResponse("PUBLISHER_HAS_BOOKS", Map.of("publisherId", publisherId));
+    }
+
+    public static ErrorResponse createAuthorNotFound(String authorId) {
+        return new ErrorResponse("AUTHOR_NOT_FOUND", Map.of("authorId", authorId));
+    }
+
+    public static ErrorResponse createAuthorHasBooks(String authorId) {
+        return new ErrorResponse("AUTHOR_HAS_BOOKS", Map.of("authorId", authorId));
+    }
+
+    public static ErrorResponse createNoAuthorSpecified() {
+        return new ErrorResponse("NO_AUTHOR_SPECIFIED", Map.of());
+    }
+
+    public static ErrorResponse createEbookOnlySupportsDigitalQuality() {
+        return new ErrorResponse("EBOOK_ONLY_SUPPORTS_DIGITAL_QUALITY", Map.of());
+    }
+
+
+    public static ErrorResponse createStocksNotAvailable(List<ImmutableTriple<String, StockFormat, StockQuality>> stocks) {
+        return new ErrorResponse("STOCKS_QUANTITY_NOT_AVAILABLE", Map.of("stocks", stocks));
+    }
+}

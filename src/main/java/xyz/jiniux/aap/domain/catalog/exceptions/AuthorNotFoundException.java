@@ -4,10 +4,10 @@ import lombok.Getter;
 
 @Getter
 public class AuthorNotFoundException extends Exception {
-    public AuthorNotFoundException(String authorId) {
+    public AuthorNotFoundException(long authorId) {
         super("the author with id " + authorId + " was not found");
         this.authorId = authorId;
     }
 
-    private final String authorId;
+    private final long authorId;
 }

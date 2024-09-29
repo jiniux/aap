@@ -39,6 +39,8 @@ dependencies {
     implementation 'org.apache.commons:commons-collections4:4.5.0-M2'
     implementation 'org.apache.commons:commons-lang3:3.14.0'
     implementation group: 'de.creativecouple.validation', name: 'fast-isbn', version: '1.1.11'
+
+    implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.8.2'
     implementation 'org.mapstruct:mapstruct:1.6.2'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.2'
 }

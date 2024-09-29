@@ -4,10 +4,10 @@ import lombok.Getter;
 
 @Getter
 public class AuthorHasBooksException extends Exception {
-    public AuthorHasBooksException(String authorId) {
+    public AuthorHasBooksException(long authorId) {
         super("the author with id " + authorId + "is assigned to at least one book, it cannot be deleted");
         this.authorId = authorId;
     }
 
-    private final String authorId;
+    private final long authorId;
 }

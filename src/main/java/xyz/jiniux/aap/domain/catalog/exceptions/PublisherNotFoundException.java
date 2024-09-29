@@ -4,10 +4,10 @@ import lombok.Getter;
 
 @Getter
 public class PublisherNotFoundException extends Exception {
-    public PublisherNotFoundException(String publisherId) {
+    public PublisherNotFoundException(long publisherId) {
         super("the publisher with id " + publisherId + " was not found");
         this.publisherId = publisherId;
     }
 
-    private final String publisherId;
+    private final long publisherId;
 }
