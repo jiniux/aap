@@ -4,8 +4,10 @@ import lombok.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.jiniux.aap.domain.catalog.exceptions.BookNotFoundException;
-import xyz.jiniux.aap.domain.warehouse.exceptions.StockAlreadyNotOnSaleException;
+import xyz.jiniux.aap.domain.warehouse.exceptions.NotEnoughItemsInStockException;
 import xyz.jiniux.aap.domain.warehouse.exceptions.StockAlreadyOnSaleException;
+import xyz.jiniux.aap.domain.warehouse.exceptions.StockNotOnSaleException;
+import xyz.jiniux.aap.domain.warehouse.exceptions.UnsupportedStockQualityException;
 import xyz.jiniux.aap.infrastructure.persistency.CatalogBookRepository;
 import xyz.jiniux.aap.infrastructure.persistency.StockRepository;
 import xyz.jiniux.aap.domain.model.CatalogBook;
@@ -17,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class WarehouseService {
@@ -33,12 +36,16 @@ public class WarehouseService {
             .orElseGet(() -> Stock.createEmpty(bookId, format, quality));
     }
 
+    public List<Stock> getAvailableStocksByIsbn(String isbn) {
+        return stockRepository.findAvailableByBookIsbn(isbn);
+    }
+
     @Transactional
     public void refillStock(
         @NonNull String isbn,
         @NonNull StockFormat stockFormat,
         @NonNull StockQuality stockQuality,
-        int quantity
+        long quantity
     ) throws BookNotFoundException {
         CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbnForShare(isbn)
             .orElseThrow(() -> new BookNotFoundException(isbn));
@@ -67,12 +74,19 @@ public class WarehouseService {
         stockRepository.save(stock);
     }
 
+    public void enforceValidStock(String isbn, StockFormat stockFormat, StockQuality stockQuality) throws UnsupportedStockQualityException {
+        if (stockFormat == StockFormat.EBOOK && stockQuality != StockQuality.DIGITAL)
+            throw new UnsupportedStockQualityException(isbn, stockFormat, stockQuality);
+    }
+
     @Transactional
     public void putStockOnSale(
         String isbn,
         @NonNull StockFormat stockFormat,
         @NonNull StockQuality stockQuality
-    ) throws BookNotFoundException {
+    ) throws BookNotFoundException, StockAlreadyOnSaleException, UnsupportedStockQualityException {
+        enforceValidStock(isbn, stockFormat, stockQuality);
+
         CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbnForShare(isbn)
             .orElseThrow(() -> new BookNotFoundException(isbn));
 
@@ -91,16 +105,39 @@ public class WarehouseService {
         @NonNull String isbn,
         @NonNull StockFormat stockFormat,
         @NonNull StockQuality stockQuality
-    ) throws BookNotFoundException {
+    ) throws BookNotFoundException, StockNotOnSaleException {
         CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbnForShare(isbn)
             .orElseThrow(() -> new BookNotFoundException(isbn));
 
         Stock stock = getOrCreateStockForUpdate(catalogBook.getId(), stockFormat, stockQuality);
 
         if (!stock.isOnSale())
-            throw new StockAlreadyNotOnSaleException(isbn, stockFormat, stockQuality);
+            throw new StockNotOnSaleException(isbn, stockFormat, stockQuality);
 
         stock.setOnSale(false);
+
+        stockRepository.save(stock);
+    }
+
+    @Transactional
+    public void reserveStock(
+        @NonNull String isbn,
+        @NonNull StockFormat stockFormat,
+        @NonNull StockQuality stockQuality,
+        long quantity
+    ) throws BookNotFoundException, StockNotOnSaleException, NotEnoughItemsInStockException {
+        CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbnForShare(isbn)
+                .orElseThrow(() -> new BookNotFoundException(isbn));
+
+        Stock stock = getOrCreateStockForUpdate(catalogBook.getId(), stockFormat, stockQuality);
+
+        if (!stock.isOnSale())
+            throw new StockNotOnSaleException(isbn, stockFormat, stockQuality);
+
+        if (stock.getQuantity() < quantity)
+            throw new NotEnoughItemsInStockException(isbn, stockFormat, stockQuality, quantity);
+
+        stock.removeQuantity(quantity);
 
         stockRepository.save(stock);
     }
@@ -111,14 +148,13 @@ public class WarehouseService {
         StockQuality stockQuality
     ) {}
 
-    public List<Integer> checkStocksAvailability(List<CheckStockAvailabilityQuery> availabilityQueries) {
+    @Transactional(readOnly = true)
+    public List<Long> checkStocksAvailability(List<CheckStockAvailabilityQuery> availabilityQueries) {
         return checkStocksAvailability(availabilityQueries, false);
     }
 
     @Transactional(readOnly = true)
-    public List<Integer> checkStocksAvailability(List<CheckStockAvailabilityQuery> availabilityQueries, boolean lock) {
-        HashMap<String, List<Stock>> stocksByISBN = new HashMap<>();
-
+    public List<Long> checkStocksAvailability(List<CheckStockAvailabilityQuery> availabilityQueries, boolean lock) {
         List<Stock> stocks;
 
         if (lock)
@@ -126,15 +162,13 @@ public class WarehouseService {
         else
             stocks = stockRepository.bulkGetStocksByISBNsForUpdate(availabilityQueries.stream().map(CheckStockAvailabilityQuery::isbn).toList());
 
-        for (Stock stock: stocks) {
-            stocksByISBN.computeIfAbsent(stock.getBook().getIsbn(), (k) -> new ArrayList<>()).add(stock);
-        }
+        Map<String, List<Stock>> stocksByIsbn = createStockMap(stocks);
 
-        List<Integer> availabilities = new ArrayList<>();
+        List<Long> availabilities = new ArrayList<>();
         for (CheckStockAvailabilityQuery query: availabilityQueries) {
-            List<Stock> bookStocks = stocksByISBN.get(query.isbn());
+            List<Stock> bookStocks = stocksByIsbn.get(query.isbn());
 
-            int availability;
+            long availability;
 
             if (bookStocks == null) {
                 availability = 0;
@@ -146,12 +180,52 @@ public class WarehouseService {
                     )
                     .findFirst()
                     .map(Stock::getQuantity)
-                    .orElse(0);
+                    .orElse(0L);
             }
 
             availabilities.add(availability);
         }
 
         return availabilities;
+    }
+
+    public record GetStockPriceQuery(
+        String isbn,
+        StockFormat stockFormat,
+        StockQuality stockQuality
+    ) {}
+
+    @Transactional(readOnly = true)
+    public List<BigDecimal> getStockPricesEur(List<GetStockPriceQuery> queries) {
+        List<Stock> stocks = stockRepository.bulkGetStocksByISBNs(queries.stream().map(GetStockPriceQuery::isbn).toList());
+        Map<String, List<Stock>> stocksByIsbn = createStockMap(stocks);
+
+        List<BigDecimal> pricesEur = new ArrayList<>();
+        for (GetStockPriceQuery query: queries) {
+            List<Stock> bookStocks = stocksByIsbn.get(query.isbn());
+
+            BigDecimal priceEur = bookStocks.stream()
+                .filter(s ->
+                        s.getQuality() == query.stockQuality()
+                                && s.getFormat() == query.stockFormat
+                )
+                .findFirst()
+                .map(Stock::getPriceEur)
+                .orElse(BigDecimal.ONE.negate());
+
+            pricesEur.add(priceEur);
+        }
+
+        return pricesEur;
+    }
+
+    private static Map<String, List<Stock>> createStockMap(List<Stock> stocks) {
+        HashMap<String, List<Stock>> stocksByIsbn = new HashMap<>();
+
+        for (Stock stock: stocks) {
+            stocksByIsbn.computeIfAbsent(stock.getBook().getIsbn(), (k) -> new ArrayList<>()).add(stock);
+        }
+
+        return stocksByIsbn;
     }
 }

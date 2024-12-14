@@ -16,7 +16,7 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
             .formLogin(Customizer.withDefaults())
             .httpBasic(Customizer.withDefaults())
-            .authorizeHttpRequests(c -> c.anyRequest().authenticated());
+            .authorizeHttpRequests(c -> c.anyRequest().not().authenticated());
 
         return http.build();
     }

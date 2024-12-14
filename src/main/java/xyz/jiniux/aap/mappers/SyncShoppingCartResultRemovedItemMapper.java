@@ -5,7 +5,9 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 import xyz.jiniux.aap.controllers.results.SyncShoppingCartResultItem;
+import xyz.jiniux.aap.controllers.results.SyncShoppingCartResultPriceChangedItem;
 import xyz.jiniux.aap.controllers.results.SyncShoppingCartResultRemovedItem;
+import xyz.jiniux.aap.domain.cart.PriceChangedShoppingCartItem;
 import xyz.jiniux.aap.domain.cart.RemovedShoppingCartItem;
 import xyz.jiniux.aap.domain.model.ShoppingCart;
 import xyz.jiniux.aap.domain.model.StockFormat;
@@ -19,9 +21,9 @@ public interface SyncShoppingCartResultRemovedItemMapper {
 
     @Mapping(target = "stockFormat", source = "item.stockFormat", qualifiedByName = "stockFormatToString")
     @Mapping(target = "stockQuality", source = "item.stockQuality", qualifiedByName = "stockQualityToString")
-    SyncShoppingCartResultRemovedItem fromCartItem(RemovedShoppingCartItem item);
+    SyncShoppingCartResultRemovedItem fromRemovedCartItem(RemovedShoppingCartItem item);
 
-    List<SyncShoppingCartResultRemovedItem> fromCartItems(List<RemovedShoppingCartItem> items);
+    List<SyncShoppingCartResultRemovedItem> fromRemovedCartItems(List<RemovedShoppingCartItem> items);
 
     @Named("stockQualityToString")
     static String stockQualityToString(StockQuality value) {

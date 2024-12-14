@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = {OptimisticLockException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse optimisticLockException(DataIntegrityViolationException ignoredEx) {
+    public ErrorResponse optimisticLockException(OptimisticLockException ignoredEx) {
         return new ErrorResponse("CONCURRENT_MODIFICATION_OCCURRED", Map.of());
     }
 }

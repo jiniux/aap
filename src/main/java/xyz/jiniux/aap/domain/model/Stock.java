@@ -27,7 +27,8 @@ public class Stock {
     @Column(nullable = false)
     private StockQuality quality;
 
-    private Integer quantity;
+    @Column(nullable = false)
+    private long quantity;
 
     public boolean isAvailable() {
         if (!isOnSale())
@@ -63,7 +64,12 @@ public class Stock {
         return stock;
     }
 
-    public void addQuantity(int quantity) {
+    public void addQuantity(long  quantity) {
         this.quantity += quantity;
+    }
+
+    public void removeQuantity(long quantity) {
+        this.quantity -= quantity;
+        assert this.quantity >= 0;
     }
 }

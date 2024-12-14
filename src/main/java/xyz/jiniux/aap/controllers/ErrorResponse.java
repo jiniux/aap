@@ -1,9 +1,9 @@
 package xyz.jiniux.aap.controllers;
 
-import org.antlr.v4.runtime.misc.Triple;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import xyz.jiniux.aap.domain.model.StockFormat;
 import xyz.jiniux.aap.domain.model.StockQuality;
+import xyz.jiniux.aap.domain.order.exceptions.ItemsPriceChangedWhilePlacingOrderException;
 
 import java.io.Serializable;
 import java.util.List;
@@ -62,5 +62,22 @@ public record ErrorResponse(String code, Object details) implements Serializable
 
     public static ErrorResponse createStocksNotAvailable(List<ImmutableTriple<String, StockFormat, StockQuality>> stocks) {
         return new ErrorResponse("STOCKS_QUANTITY_NOT_AVAILABLE", Map.of("stocks", stocks));
+    }
+
+    public static ErrorResponse createStockAlreadyOnSale(String isbn, String stockQuality, String stockFormat) {
+        return new ErrorResponse("STOCK_ALREADY_ON_SALE", Map.of("isbn", isbn, "stockQuality", stockQuality, "stockFormat", stockFormat));
+    }
+
+    public static ErrorResponse createStockNotOnSale(String isbn, String stockQuality, String stockFormat) {
+        return new ErrorResponse("STOCK_NOT_ON_SALE", Map.of("isbn", isbn, "stockQuality", stockQuality, "stockFormat", stockFormat));
+    }
+
+    public static ErrorResponse createNotEnoughItemsInStock(String isbn, String stockQuality, String stockFormat) {
+        return new ErrorResponse("NOT_ENOUGH_ITEMS_IN_STOCK", Map.of("isbn", isbn, "stockQuality", stockQuality, "stockFormat", stockFormat));
+    }
+
+    public static ErrorResponse createItemsPriceChanged(List<ItemsPriceChangedWhilePlacingOrderException.Info> details) {
+        var info = details.stream().map(i -> Map.of("isbn", i.bookIsbn(), "stockFormat", i.stockFormat(), "stockQuality", i.stockQuality(), "oldPrice", i.oldPrice(), "newPrice", i.newPrice())).toList();
+        return new ErrorResponse("ITEMS_PRICE_CHANGED", info);
     }
 }

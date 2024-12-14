@@ -20,5 +20,5 @@ public record SyncShoppingCartRequestItem(
     String stockQuality,
 
     @Min(1)
-    int quantity
+    long quantity
 ) {}

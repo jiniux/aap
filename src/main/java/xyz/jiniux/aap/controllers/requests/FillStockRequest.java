@@ -6,5 +6,5 @@ import java.io.Serializable;
 
 public record FillStockRequest(
     @Min(1)
-    int quantity
+    long quantity
 ) implements Serializable { }

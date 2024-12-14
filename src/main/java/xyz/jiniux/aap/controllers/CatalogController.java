@@ -6,6 +6,7 @@ import org.hibernate.validator.constraints.ISBN;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import xyz.jiniux.aap.controllers.requests.*;
 import xyz.jiniux.aap.controllers.results.*;
@@ -32,6 +33,7 @@ public class CatalogController {
     }
 
     @PostMapping(value = "/books")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<?> registerBook(@RequestBody @Valid BookRegistrationRequest request)
     {
         try {
@@ -60,7 +62,7 @@ public class CatalogController {
 
     @GetMapping(value = "/books")
     public ResponseEntity<List<BookSearchResultEntry>> searchBooks(
-        @RequestParam(name = "query", required = false) String query,
+        @RequestParam(name = "query", required = false) @NotNull String query,
         @RequestParam(name = "page", defaultValue = "0", required = false) int page,
         @RequestParam(name = "pageSize", required = false) Integer pageSize)
     {
@@ -73,6 +75,7 @@ public class CatalogController {
 
     // Use patch because the user does not need to specify all the fields of the book
     @PatchMapping(value = "/books/{isbn}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<?> editBook(
         @PathVariable(name = "isbn") @NotNull @ISBN String isbn,
         @Valid @RequestBody EditBookRequest request
@@ -119,6 +122,7 @@ public class CatalogController {
     }
 
     @DeleteMapping(value = "/books/{isbn}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<?> removeBook(
         @PathVariable(name = "isbn") @NotNull @ISBN String isbn
     ) {
@@ -133,6 +137,7 @@ public class CatalogController {
     }
 
     @PostMapping(value = "/authors")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Void> registerAuthor(
         @RequestBody @Valid AuthorRegistrationRequest request
     ) {
@@ -143,6 +148,7 @@ public class CatalogController {
     }
 
     @PatchMapping(value = "/authors/{authorId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<?> editAuthor(
         @PathVariable("authorId") @NotNull @ValidAuthorId String authorId,
         @RequestBody @Valid EditAuthorRequest request
@@ -160,6 +166,7 @@ public class CatalogController {
     }
 
     @DeleteMapping(value = "/authors/{authorId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<?> removeAuthor(
         @PathVariable("authorId") @NotNull @ValidAuthorId String authorId
     ) {
@@ -179,6 +186,7 @@ public class CatalogController {
     }
 
     @PostMapping(value = "/publishers")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Void> registerPublisher(
         @RequestBody @Valid PublisherRegistrationRequest request
     ) {
@@ -189,6 +197,7 @@ public class CatalogController {
     }
 
     @PatchMapping(value = "/publishers/{publisherId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<?> editPublisher(
         @PathVariable("publisherId") @NotNull @ValidPublisherId String publisherId,
         @RequestBody @Valid EditPublisherRequest request
@@ -206,6 +215,7 @@ public class CatalogController {
     }
 
     @DeleteMapping(value = "/publishers/{publisherId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<?> removePublisher(
         @PathVariable("publisherId") @NotNull @ValidPublisherId String publisherId
     ) {

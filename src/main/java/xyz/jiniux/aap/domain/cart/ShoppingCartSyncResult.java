@@ -4,4 +4,8 @@ import xyz.jiniux.aap.domain.model.ShoppingCart;
 
 import java.util.List;
 
-public record ShoppingCartSyncResult(ShoppingCart shoppingCart, List<RemovedShoppingCartItem> removedItems) {}
+public record ShoppingCartSyncResult(
+    ShoppingCart shoppingCart,
+    List<RemovedShoppingCartItem> removedItems,
+    List<PriceChangedShoppingCartItem> priceChangedItems
+) {}

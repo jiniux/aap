@@ -4,10 +4,11 @@ import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
-import xyz.jiniux.aap.domain.cart.exceptions.CannotRemoveMoreThanOriginalQuantityException;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Entity
@@ -23,9 +24,11 @@ public class ShoppingCart {
     @Column(nullable = false, unique = true)
     private String username;
 
+
+
     @Getter
-    @AllArgsConstructor
-    @EqualsAndHashCode(of = {"isbn", "stockFormat", "stockQuality", "quantity"})
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(of = {"isbn", "stockFormat", "stockQuality", "quantity", "priceEur"})
     public static class Item implements Serializable {
         private final String isbn;
         private final StockFormat stockFormat;
@@ -33,6 +36,9 @@ public class ShoppingCart {
 
         @Setter
         private long quantity;
+
+        @Setter
+        private BigDecimal priceEur;
 
         public void addQuantity(long additionalQuantity) {
             quantity += additionalQuantity;
@@ -54,9 +60,12 @@ public class ShoppingCart {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "json")
-    @Getter
     @Access(AccessType.PROPERTY)
     private List<Item> items;
+
+    public List<Item> getItems() {
+        return itemsMap.values().stream().sorted(Comparator.comparing(Item::getIsbn)).collect(Collectors.toList());
+    }
 
     private void addItem(Item item) {
         ItemKey key = item.createItemKey();
@@ -69,28 +78,34 @@ public class ShoppingCart {
         }
     }
 
-    public List<ShoppingCart.Item> removeAllItem(List<ItemKey> keys) {
+    public List<ShoppingCart.Item> removeAllItems(List<ItemKey> keys) {
         List<ShoppingCart.Item> removedItems = new ArrayList<>();
 
         for (ItemKey key: keys)
             removedItems.add(itemsMap.remove(key));
 
-        items.clear();
-        items.addAll(this.itemsMap.values());
-
         return removedItems;
     }
 
     public void setItems(List<Item> items) {
-        this.itemsMap.clear();
+        itemsMap.clear();
+
         for (Item item: items) {
             addItem(item);
         }
+    }
 
-        items.clear();
-        items.addAll(this.itemsMap.values());
+    public void merge(ShoppingCart newShoppingCart) {
+        for (Item item: newShoppingCart.getItems()) {
+            ItemKey key = item.createItemKey();
 
-        this.items = items;
+            if (!itemsMap.containsKey(key)) {
+                addItem(item);
+            } else {
+                Item existingItem = itemsMap.get(key);
+                existingItem.setQuantity(item.getQuantity());
+            }
+        }
     }
 
     public ShoppingCart() {

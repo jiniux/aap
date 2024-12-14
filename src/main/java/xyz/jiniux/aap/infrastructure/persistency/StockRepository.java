@@ -1,6 +1,7 @@
 package xyz.jiniux.aap.infrastructure.persistency;
 
 import jakarta.persistence.LockModeType;
+import org.mapstruct.Mapping;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -23,6 +24,9 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
 
     @Query("select s from Stock s join s.book where s.book.isbn in :isbns ")
     List<Stock> bulkGetStocksByISBNs(@Param("isbns") List<String> isbns);
+
+    @Query("select s from Stock s join s.book where s.book.isbn = :isbn and s.quantity > 0")
+    List<Stock> findAvailableByBookIsbn(String isbn);
 
     @Lock(LockModeType.PESSIMISTIC_READ)
     @Query("select s from Stock s join s.book where s.book.isbn in :isbns ")
