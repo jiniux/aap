@@ -1,0 +1,10 @@
+<div class="toast {{ toast.kind }}">
+    @if (toast.kind === 'info') {
+      <fa-icon [icon]="'circle-info'" class="info-icon"></fa-icon>
+    } @else if (toast.kind === 'error') {
+      <fa-icon [icon]="'circle-exclamation'" class="error-icon"></fa-icon>
+    } @else {
+      <fa-icon [icon]="'circle-check'" class="success-icon"></fa-icon>
+    }
+    <span class="message">{{ toast.message | translate }}</span>
+  </div>

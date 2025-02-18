@@ -1,0 +1,35 @@
+<div class="card" (click)="openOverview()"> 
+
+    <div class="cover" style="background-image: url('{{ summary.coverUrl }}');">
+        <div class="backdrop">
+            <div class="img" style="background-image: url('{{ summary.coverUrl }}');"></div>
+        </div>
+    </div>
+
+    <div class="card-content">
+        <h2>{{ title }}</h2>
+        <p>{{ summary.authorNames }}</p>
+
+        @if (summary.supply.available) {
+            <div class="details">
+                <div class="price">
+                    <fa-icon [icon]="'tag'"></fa-icon>
+                    <span translate>{{summary.supply.pricing}}</span>
+                </div>
+                <div class="format">
+                    <fa-icon [icon]="'book'"></fa-icon>
+                    <span translate>{{ "stock-format." + summary.supply.formats }}</span>
+                </div>
+            </div>
+
+            <div class="status">
+                <fa-icon [icon]="'smile'"></fa-icon>
+                <span translate>{{ "stock-quality." + summary.supply.qualities }}</span>
+            </div>
+        }
+    </div>
+
+    @if (!summary.supply.available) {
+        <div class="not-available">{{ 'not-available' | translate | uppercase }}</div>
+    }
+</div>

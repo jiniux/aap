@@ -26,7 +26,6 @@ public class EncodingConfiguration {
         }
     }
 
-
     @Bean
     public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
         MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter();

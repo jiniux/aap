@@ -20,7 +20,7 @@ public interface CatalogBookRepository extends JpaRepository<CatalogBook, Intege
         "WHERE LOWER(cb.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
         "OR LOWER(a.firstName) LIKE LOWER(CONCAT('%', :query, '%'))" +
         "OR LOWER(a.lastName) LIKE LOWER(CONCAT('%', :query, '%'))")
-    List<CatalogBook> searchCatalogBooks(String query, Pageable pageable);
+    List<CatalogBook> searchCatalogBooks(@Param("query") String query, Pageable pageable);
 
     @Query("SELECT COUNT(cb) FROM CatalogBook cb JOIN cb.authors a WHERE a.id = :authorId")
     long countCatalogBookByAuthorId(@Param("authorId") Long authorId);

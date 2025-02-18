@@ -1,10 +1,6 @@
 package xyz.jiniux.aap.domain.model;
 
-
-import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.Builder;
-
 import java.io.Serializable;
 
 @Embeddable

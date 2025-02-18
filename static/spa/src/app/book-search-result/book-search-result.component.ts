@@ -1,0 +1,101 @@
+import { Component, Input, OnInit } from '@angular/core';
+import { BookSearchResults } from '../catalog.service';
+import Big from 'big.js';
+import { Router } from '@angular/router';
+import { cmpFormatByPriority, cmpQualityByPriority } from '../../utils/stock-priorities';
+
+type Stock = BookSearchResults[0]['stocks'][0]
+type FormatPreviewImage = BookSearchResults[0]['formatPreviewImages'][0]
+type Author = BookSearchResults[0]['authors'][0]
+type Publisher = BookSearchResults[0]['publisher']
+
+function computeUpperAndLowerPrice(stocks: Readonly<Stock[]>): Big {
+  const tmp = new Array<Stock>(...stocks)
+
+  if (tmp.length === 1) {
+    return tmp[0].priceEur
+  } 
+
+  tmp.sort((a, b) => {
+    const qualityCmp = cmpQualityByPriority(a.quality, b.quality)
+    
+    if (qualityCmp !== 0) {
+      return qualityCmp
+    }
+    
+    const formatCmp = cmpFormatByPriority(a.format, b.format)
+    
+    if (formatCmp !== 0) {
+      return formatCmp
+    }
+
+    return a.priceEur.cmp(b.priceEur)
+  })
+  
+
+  const lp = tmp[0].priceEur;
+
+  return lp
+}
+
+@Component({
+  selector: 'app-landing-search-result',
+  standalone: false,
+  
+  templateUrl: './book-search-result.component.html',
+  styleUrl: './book-search-result.component.css'
+})
+export class LandingSearchResultComponent implements OnInit {
+  @Input("title") public title: string = ''
+  @Input("authors") public authors: Author[] = []
+  @Input("publisher") public publisher: Publisher = { id: '', name: '' }
+  @Input("publicationYear") public publicationYear: number = 0
+  @Input("edition") public edition: string = ''
+  @Input("stocks") public stocks: Readonly<Stock[]> = []
+  @Input("formatPreviewImages") public formatPreviewImages: Readonly<FormatPreviewImage[]> = []
+  @Input("isbn") public isbn: string = ''
+
+  constructor(private readonly route: Router) {}
+
+  public summary: {
+    authorNames: string,
+    publisherName: string,
+    coverUrl: string,
+    supply: { available: false } | {
+      available: true
+      formats: string
+      qualities: string
+      pricing: string,
+      hasMoreFormats: boolean,
+      hasMoreQualities: boolean
+    }
+  } = null!
+
+  public openOverview() {
+    this.route.navigate(['/book', this.isbn])
+  }
+
+  ngOnInit(): void {
+    this.summary = {
+      authorNames: this.authors.map(author => `${author.firstName} ${author.lastName}`).join(", "),
+      publisherName: this.publisher.name,
+      coverUrl: this.formatPreviewImages[0]?.url !== null ? "/api" + this.formatPreviewImages[0].url : '',
+      supply: { available: false }
+    }
+
+    if (this.stocks.length !== 0) {
+      const pricing = computeUpperAndLowerPrice(this.stocks)
+      const formats = this.stocks.map(s => s.format)
+      const qualities = this.stocks.map(s => s.quality)
+      
+      this.summary.supply = {
+        available: true,
+        formats: formats[0],
+        qualities: qualities[0],
+        hasMoreFormats: formats.length > 1,
+        hasMoreQualities: qualities.length > 1,
+        pricing: "€" + pricing.toFixed(2) 
+      }
+    }
+  }
+}

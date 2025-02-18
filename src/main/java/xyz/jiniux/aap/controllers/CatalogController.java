@@ -4,23 +4,27 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.ISBN;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import xyz.jiniux.aap.controllers.requests.*;
 import xyz.jiniux.aap.controllers.results.*;
 import xyz.jiniux.aap.domain.catalog.*;
 import xyz.jiniux.aap.domain.catalog.exceptions.*;
+import xyz.jiniux.aap.domain.model.*;
 import xyz.jiniux.aap.mappers.*;
-import xyz.jiniux.aap.domain.model.Author;
-import xyz.jiniux.aap.domain.model.CatalogBook;
-import xyz.jiniux.aap.domain.model.Publisher;
 import xyz.jiniux.aap.support.ISBNCleaner;
 import xyz.jiniux.aap.validation.ValidAuthorId;
 import xyz.jiniux.aap.validation.ValidPublisherId;
+import xyz.jiniux.aap.validation.ValidStockFormat;
 
+import java.io.IOException;
 import java.net.URI;
+import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,7 +37,7 @@ public class CatalogController {
     }
 
     @PostMapping(value = "/books")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasRole('manage:books')")
     public ResponseEntity<?> registerBook(@RequestBody @Valid BookRegistrationRequest request)
     {
         try {
@@ -62,20 +66,26 @@ public class CatalogController {
 
     @GetMapping(value = "/books")
     public ResponseEntity<List<BookSearchResultEntry>> searchBooks(
-        @RequestParam(name = "query", required = false) @NotNull String query,
+        @RequestParam(name = "query", required = false) String query,
         @RequestParam(name = "page", defaultValue = "0", required = false) int page,
         @RequestParam(name = "pageSize", required = false) Integer pageSize)
     {
         pageSize = pageSize == null ? BOOK_SEARCH_MAX_PAGE_SIZE : Math.min(BOOK_SEARCH_MAX_PAGE_SIZE, pageSize);
 
-        List<CatalogBook> books = this.catalogService.searchBooks(query.trim(), pageSize, page);
+        if (query != null) {
+            query = query.trim();
+        }
 
-        return ResponseEntity.ok(BookSearchResultEntryMapper.MAPPER.fromCatalogBooks(books));
+        List<CatalogBook> books = this.catalogService.searchBooks(query, pageSize, page);
+        books.forEach(book -> book.setStocks(book.getStocks().stream().filter(Stock::isAvailable).collect(Collectors.toSet())));
+        List<BookSearchResultEntry> entries = BookSearchResultEntryMapper.MAPPER.fromCatalogBooks(books);
+
+        return ResponseEntity.ok(entries);
     }
 
     // Use patch because the user does not need to specify all the fields of the book
     @PatchMapping(value = "/books/{isbn}")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasRole('manage:books')")
     public ResponseEntity<?> editBook(
         @PathVariable(name = "isbn") @NotNull @ISBN String isbn,
         @Valid @RequestBody EditBookRequest request
@@ -107,12 +117,28 @@ public class CatalogController {
         }
     }
 
+    @Transactional
+    @GetMapping(value = "/book-format-preview-images/{id}")
+    public ResponseEntity<?> getBookFormatPreviewImage(
+        @PathVariable(name = "id") @NotNull Long id
+    ) {
+        try {
+            BookFormatPreviewImage image = this.catalogService.getBookFormatPreviewImage(id);
+            return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.IMAGE_JPEG).body(image.getImage().getBytes(1, (int) image.getImage().length()));
+        } catch (BookFormatPreviewImageNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @GetMapping(value = "/books/{isbn}")
     public ResponseEntity<?> getBook(
         @PathVariable(name = "isbn") @NotNull @ISBN String isbn
     ) {
         try {
             CatalogBook book = this.catalogService.getBook(ISBNCleaner.clean(isbn));
+            book.setStocks(book.getStocks().stream().filter(Stock::isAvailable).collect(Collectors.toSet()));
             return ResponseEntity.ok(FullCatalogBookResultMapper.MAPPER.fromCatalogBook(book));
         } catch (BookNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
@@ -122,7 +148,7 @@ public class CatalogController {
     }
 
     @DeleteMapping(value = "/books/{isbn}")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasAuthority('manage:authors')")
     public ResponseEntity<?> removeBook(
         @PathVariable(name = "isbn") @NotNull @ISBN String isbn
     ) {
@@ -137,7 +163,7 @@ public class CatalogController {
     }
 
     @PostMapping(value = "/authors")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasAuthority('manage:authors')")
     public ResponseEntity<Void> registerAuthor(
         @RequestBody @Valid AuthorRegistrationRequest request
     ) {
@@ -148,7 +174,7 @@ public class CatalogController {
     }
 
     @PatchMapping(value = "/authors/{authorId}")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasAuthority('manage:authors')")
     public ResponseEntity<?> editAuthor(
         @PathVariable("authorId") @NotNull @ValidAuthorId String authorId,
         @RequestBody @Valid EditAuthorRequest request
@@ -166,7 +192,7 @@ public class CatalogController {
     }
 
     @DeleteMapping(value = "/authors/{authorId}")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasRole('manage:books')")
     public ResponseEntity<?> removeAuthor(
         @PathVariable("authorId") @NotNull @ValidAuthorId String authorId
     ) {
@@ -186,7 +212,7 @@ public class CatalogController {
     }
 
     @PostMapping(value = "/publishers")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasRole('manage:books')")
     public ResponseEntity<Void> registerPublisher(
         @RequestBody @Valid PublisherRegistrationRequest request
     ) {
@@ -197,7 +223,7 @@ public class CatalogController {
     }
 
     @PatchMapping(value = "/publishers/{publisherId}")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasRole('manage:books')")
     public ResponseEntity<?> editPublisher(
         @PathVariable("publisherId") @NotNull @ValidPublisherId String publisherId,
         @RequestBody @Valid EditPublisherRequest request
@@ -215,7 +241,7 @@ public class CatalogController {
     }
 
     @DeleteMapping(value = "/publishers/{publisherId}")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasRole('manage:books')")
     public ResponseEntity<?> removePublisher(
         @PathVariable("publisherId") @NotNull @ValidPublisherId String publisherId
     ) {
@@ -293,5 +319,34 @@ public class CatalogController {
         List<Author> authors = this.catalogService.searchAuthors(query, pageSize, page);
 
         return ResponseEntity.ok(AuthorSearchResultEntryMapper.MAPPER.fromAuthors(authors));
+    }
+
+
+    @PostMapping(value = "/book-format-preview-images/upload")
+    @PreAuthorize("hasRole('manage:books')")
+    public ResponseEntity<?> uploadBookFormatPreviewImage(
+        @RequestPart(name = "isbn") @NotNull @ISBN(type = ISBN.Type.ISBN_13) String isbn,
+        @RequestPart(name = "format") @ValidStockFormat String format,
+        @RequestPart(name = "image") MultipartFile image
+    ) {
+        try {
+            long id = this.catalogService.uploadStockBookCover(isbn, StockFormatMapper.MAPPER.fromString(format), image);
+
+            return ResponseEntity.created(URI.create("/book-format-preview-images/" + id)).build();
+        } catch (InvalidImageFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ErrorResponse.createInvalidImageFormat(new HashSet<>(e.getExpectedFormats()), e.getFormat())
+            );
+        } catch (SQLException | IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (ImageTooBigException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ErrorResponse.createImageTooBig(e.getMaxSize(), e.getActualSize())
+            );
+        } catch (BookNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ErrorResponse.createBookNotFound(e.getIsbn())
+            );
+        }
     }
 }

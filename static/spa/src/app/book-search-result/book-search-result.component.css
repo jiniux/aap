@@ -1,0 +1,82 @@
+.card {
+    position: relative;
+    width: 300px;
+    margin: 20px auto;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    background: #fff;
+    cursor: pointer;
+}
+
+.card-content {
+    padding: 10px 20px;
+    text-align: center;
+}
+
+.card h2 {
+    font-size: 18px;
+    margin: 10px 0;
+}
+
+.card p {
+    font-size: 14px;
+    color: #666;
+}
+
+.details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.details .price,
+.details .format {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    gap: 5px;
+}
+
+.card .cover {
+    height: 300px;
+    width: 100%;
+}
+
+.card .cover .backdrop {
+    height: 100%;
+    width: 100%;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.card .cover .backdrop .img {
+    height: 100%;
+    width: 100%;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.status {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.card fa-icon {
+    font-size: 16px;
+    color: #333;
+}
+
+.card .not-available {
+    background: black;
+    width: 100%;
+    color: white;
+    padding: 4px;
+}

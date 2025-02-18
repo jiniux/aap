@@ -1,0 +1,18 @@
+html, body {
+  min-height: 100%;
+  width: 100%;
+  margin: 0;
+  background-color: white;
+  font-family: 'Nunito Sans', sans-serif;
+  box-sizing: border-box;
+  display: flex;  /* add this */
+}
+
+
+.loading-progress-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}

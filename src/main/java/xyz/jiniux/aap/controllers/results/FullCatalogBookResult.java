@@ -1,7 +1,11 @@
 package xyz.jiniux.aap.controllers.results;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 
 public record FullCatalogBookResult(
     String title,
@@ -10,8 +14,22 @@ public record FullCatalogBookResult(
     int publicationYear,
     String edition,
     List<Author> authors,
-    Publisher publisher
+    Publisher publisher,
+    List<Stock> stocks,
+    List<FormatPreviewImages> formatPreviewImages
 ) implements Serializable {
+    public record FormatPreviewImages(
+        String url,
+        String format
+    ) implements Serializable { }
+
+    public record Stock (
+        String format,
+        String quality,
+        @JsonFormat(shape = JsonFormat.Shape.STRING)
+        BigDecimal priceEur
+    ) implements Serializable { }
+
     public record Author(
         String id,
         String firstName,

@@ -5,7 +5,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.jiniux.aap.domain.accounting.PaymentStrategy;
+import xyz.jiniux.aap.domain.billing.PaymentStrategy;
 import xyz.jiniux.aap.domain.catalog.exceptions.BookNotFoundException;
 import xyz.jiniux.aap.domain.model.Address;
 import xyz.jiniux.aap.domain.order.events.OrderPlacedEvent;
@@ -63,6 +63,7 @@ public class OrderService {
         }
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Retryable(retryFor = { OptimisticLockException.class })
     public void confirmOrder(Order order) throws OrderNotFoundException, OrderAlreadyConfirmedException {
         try {
@@ -81,7 +82,7 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void placeOrderFromShoppingCartItems(String username, List<ShoppingCart.Item> shoppingCartItems, PaymentStrategy paymentStrategy, Address address)
             throws NotEnoughItemsInStockException, BookNotFoundException, StockNotOnSaleException, ItemsPriceChangedWhilePlacingOrderException
     {

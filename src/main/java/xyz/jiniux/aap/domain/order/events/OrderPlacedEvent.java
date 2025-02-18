@@ -1,6 +1,6 @@
 package xyz.jiniux.aap.domain.order.events;
 
-import xyz.jiniux.aap.domain.accounting.PaymentStrategy;
+import xyz.jiniux.aap.domain.billing.PaymentStrategy;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;

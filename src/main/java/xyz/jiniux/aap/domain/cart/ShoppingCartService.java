@@ -2,9 +2,10 @@ package xyz.jiniux.aap.domain.cart;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
-import jakarta.persistence.OptimisticLockException;
 import lombok.NonNull;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.jiniux.aap.domain.cart.exceptions.StocksQuantityNotAvailableException;
@@ -12,7 +13,6 @@ import xyz.jiniux.aap.domain.model.ShoppingCart;
 import xyz.jiniux.aap.domain.model.StockFormat;
 import xyz.jiniux.aap.domain.model.StockQuality;
 import xyz.jiniux.aap.domain.warehouse.WarehouseService;
-import xyz.jiniux.aap.domain.warehouse.exceptions.UnsupportedStockQualityException;
 import xyz.jiniux.aap.infrastructure.persistency.ShoppingCartRepository;
 
 import java.math.BigDecimal;
@@ -47,6 +47,12 @@ public class ShoppingCartService {
 
         if (!unavailableStocks.isEmpty())
             throw new StocksQuantityNotAvailableException(unavailableStocks);
+    }
+
+    private void enforceStockAvailability(ShoppingCart.Item items)
+            throws StocksQuantityNotAvailableException
+    {
+        enforceStockAvailability(List.of(items));
     }
 
     private static List<ImmutableTriple<String, StockFormat, StockQuality>> checkUnavailableStocks(List<ShoppingCart.Item> items, List<Long> availabilities) {
@@ -86,32 +92,33 @@ public class ShoppingCartService {
         return results;
     }
 
-    private void enforceValidStocks(List<ShoppingCart.Item> items) throws UnsupportedStockQualityException {
-        for (ShoppingCart.Item item: items) {
-            warehouseService.enforceValidStock(item.getIsbn(), item.getStockFormat(), item.getStockQuality());
-        }
-    }
-
-    @Transactional
-    public ShoppingCartSyncResult pushShoppingCartUpdate(@NonNull String username, @NonNull List<ShoppingCart.Item> items, long cartVersion)
-            throws UnsupportedStockQualityException
+    @Transactional(rollbackFor = Exception.class)
+    @Retryable(retryFor = DataIntegrityViolationException.class)
+    public ShoppingCartSyncResult pushShoppingCartUpdate(@NonNull String username, @NonNull ShoppingCartUpdate update)
+            throws StocksQuantityNotAvailableException
     {
-        enforceValidStocks(items);
-
         Optional<ShoppingCart> cartOptional = shoppingCartRepository.findCartByUsername(username);
         ShoppingCart shoppingCart;
 
         if (cartOptional.isPresent()) {
             shoppingCart = cartOptional.get();
-
-            if (shoppingCart.getVersion() != cartVersion) {
-                throw new OptimisticLockException("Shopping cart version mismatch (expected: " + cartVersion + ", actual: " + shoppingCart.getVersion() + ")");
-            }
-
-            entityManager.lock(shoppingCart, LockModeType.OPTIMISTIC);
+            entityManager.lock(shoppingCart, LockModeType.PESSIMISTIC_WRITE);
         } else {
             shoppingCart = ShoppingCart.createFor(username);
         }
+
+        switch (update) {
+            case ShoppingCartUpdate.AddItem addItem -> {
+                ShoppingCart.Item newItem = shoppingCart.addItem(addItem.toItem());
+                enforceStockAvailability(newItem);
+            }
+            case ShoppingCartUpdate.RemoveItem removeItem -> {
+                shoppingCart.removeItem(removeItem.toItemKey());
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + update);
+        }
+
+        List<ShoppingCart.Item> items = shoppingCart.getItems();
 
         List<RemovedShoppingCartItem> removedItems = removeUnavailableStocks(items, shoppingCart);
         List<PriceChangedShoppingCartItem> priceChangedShoppingCartItems = fillPrices(items);
@@ -127,18 +134,23 @@ public class ShoppingCartService {
         try {
             enforceStockAvailability(items);
         } catch (StocksQuantityNotAvailableException e) {
-            return shoppingCart.removeAllItems(
+            List<RemovedShoppingCartItem> removedItems = shoppingCart.removeAllItems(
                             e.getDetails().stream().map(m ->
                                     new ShoppingCart.ItemKey(m.getLeft(), m.getMiddle(), m.getRight())).toList()
                     ).stream()
                 .map(i -> new RemovedShoppingCartItem(i.getIsbn(), i.getStockFormat(), i.getStockQuality()))
                 .toList();
+
+            Set<RemovedShoppingCartItem> removedItemsSet = new HashSet<RemovedShoppingCartItem>(removedItems);
+            items.removeIf(i -> removedItemsSet.contains(new RemovedShoppingCartItem(i.getIsbn(), i.getStockFormat(), i.getStockQuality())));
+
+            return removedItems;
         }
 
         return Collections.emptyList();
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ShoppingCartSyncResult getSyncedShoppingCart(@NonNull String username)
     {
         Optional<ShoppingCart> cartOptional = shoppingCartRepository.findCartByUsernameForUpdate(username);
@@ -147,9 +159,13 @@ public class ShoppingCartService {
             return new ShoppingCartSyncResult(ShoppingCart.createFor(username), Collections.emptyList(), Collections.emptyList());
 
         ShoppingCart shoppingCart = cartOptional.get();
-        List<RemovedShoppingCartItem> removedItems = removeUnavailableStocks(shoppingCart.getItems(), shoppingCart);
 
-        List<PriceChangedShoppingCartItem> priceChangedShoppingCartItems = fillPrices(shoppingCart.getItems());
+        List<ShoppingCart.Item> items = shoppingCart.getItems();
+
+        List<RemovedShoppingCartItem> removedItems = removeUnavailableStocks(items, shoppingCart);
+        List<PriceChangedShoppingCartItem> priceChangedShoppingCartItems = fillPrices(items);
+
+        shoppingCart.setItems(items);
 
         shoppingCartRepository.save(shoppingCart);
 

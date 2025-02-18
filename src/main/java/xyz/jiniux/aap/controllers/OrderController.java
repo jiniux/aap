@@ -8,7 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import xyz.jiniux.aap.controllers.requests.CheckoutRequest;
-import xyz.jiniux.aap.domain.accounting.PaymentStrategy;
+import xyz.jiniux.aap.domain.billing.PaymentStrategy;
 import xyz.jiniux.aap.domain.catalog.exceptions.BookNotFoundException;
 import xyz.jiniux.aap.domain.model.Address;
 import xyz.jiniux.aap.domain.model.ShoppingCart;
@@ -33,7 +33,7 @@ public class OrderController {
     }
 
     @PostMapping(value = "/order/place")
-    @PreAuthorize("hasRole('user')")
+    @PreAuthorize("hasAuthority('place:order')")
     public ResponseEntity<?> placeOrder(Principal principal, @RequestBody @Valid CheckoutRequest requestItems) {
         List<ShoppingCart.Item> items = CartItemMapper.MAPPER.fromCheckoutRequestItems(requestItems.items());
         PaymentStrategy paymentStrategy = requestItems.paymentStrategy().convert();

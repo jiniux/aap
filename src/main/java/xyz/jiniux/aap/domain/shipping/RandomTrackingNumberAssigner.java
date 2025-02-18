@@ -2,8 +2,6 @@ package xyz.jiniux.aap.domain.shipping;
 
 import xyz.jiniux.aap.domain.model.Order;
 
-import java.util.Random;
-import java.util.UUID;
 import java.util.random.RandomGenerator;
 
 public class RandomTrackingNumberAssigner implements TrackingNumberAssigner {

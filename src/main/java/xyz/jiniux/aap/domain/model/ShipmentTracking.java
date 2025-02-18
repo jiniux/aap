@@ -3,7 +3,6 @@ package xyz.jiniux.aap.domain.model;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.Getter;
 import org.hibernate.annotations.Type;
 
 import java.util.ArrayList;

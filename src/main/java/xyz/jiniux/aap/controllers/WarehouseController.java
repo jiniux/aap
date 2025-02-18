@@ -15,7 +15,7 @@ import xyz.jiniux.aap.controllers.requests.FillStockRequest;
 import xyz.jiniux.aap.controllers.requests.SetStockPriceRequest;
 import xyz.jiniux.aap.domain.warehouse.exceptions.StockAlreadyOnSaleException;
 import xyz.jiniux.aap.domain.warehouse.exceptions.StockNotOnSaleException;
-import xyz.jiniux.aap.domain.warehouse.exceptions.UnsupportedStockQualityException;
+import xyz.jiniux.aap.domain.warehouse.exceptions.StockPriceNotSetException;
 import xyz.jiniux.aap.mappers.StockFormatMapper;
 import xyz.jiniux.aap.mappers.StockQualityMapper;
 import xyz.jiniux.aap.mappers.StockResultElementMapper;
@@ -33,7 +33,7 @@ public class WarehouseController {
     }
 
     @PostMapping("/books/{isbn}/stocks/{stockFormat}/{stockQuality}/action/fill")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasAuthority('manage:stocks')")
     public ResponseEntity<?> restockBook(
         @PathVariable("isbn") @ISBN String isbn,
         @PathVariable("stockFormat") @ValidStockFormat String stockFormat,
@@ -42,11 +42,6 @@ public class WarehouseController {
     ) {
         StockFormat decodedStockFormat = StockFormatMapper.MAPPER.fromString(stockFormat);
         StockQuality decodedStockQuality = StockQualityMapper.MAPPER.fromString(stockQuality);
-
-        if (decodedStockFormat == StockFormat.EBOOK && decodedStockQuality != StockQuality.DIGITAL)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ErrorResponse.createEbookOnlySupportsDigitalQuality()
-            );
 
         try {
             this.warehouseService.refillStock(isbn, decodedStockFormat, decodedStockQuality, request.quantity());
@@ -60,7 +55,7 @@ public class WarehouseController {
     }
 
     @PatchMapping("/books/{isbn}/stocks/{stockFormat}/{stockQuality}/price")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasAuthority('manage:stocks')")
     public ResponseEntity<?> setStockPrice(
         @PathVariable("isbn") @ISBN String isbn,
         @PathVariable("stockFormat") @ValidStockFormat String stockFormat,
@@ -69,11 +64,6 @@ public class WarehouseController {
     ) {
         StockFormat decodedStockFormat = StockFormatMapper.MAPPER.fromString(stockFormat);
         StockQuality decodedStockQuality = StockQualityMapper.MAPPER.fromString(stockQuality);
-
-        if (decodedStockFormat == StockFormat.EBOOK && decodedStockQuality != StockQuality.DIGITAL)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ErrorResponse.createEbookOnlySupportsDigitalQuality()
-            );
 
         try {
             this.warehouseService.setStockPrice(isbn, decodedStockFormat, decodedStockQuality, request.priceEur());
@@ -87,7 +77,7 @@ public class WarehouseController {
     }
 
     @GetMapping("/books/{isbn}/stocks")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasAuthority('manage:stocks')")
     public ResponseEntity<?> getStocks(@PathVariable("isbn") @ISBN String isbn) {
         List<Stock> stocks = this.warehouseService.getAvailableStocksByIsbn(isbn);
 
@@ -95,7 +85,7 @@ public class WarehouseController {
     }
 
     @PostMapping("/books/{isbn}/stocks/{stockFormat}/{stockQuality}/action/put-on-sale")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasAuthority('manage:stocks')")
     public ResponseEntity<?> setStockPrice(
         @PathVariable("isbn") @ISBN String isbn,
         @PathVariable("stockFormat") @ValidStockFormat String stockFormat,
@@ -107,10 +97,6 @@ public class WarehouseController {
         try {
             this.warehouseService.putStockOnSale(isbn, decodedStockFormat, decodedStockQuality);
             return ResponseEntity.ok().build();
-        } catch (UnsupportedStockQualityException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ErrorResponse.createEbookOnlySupportsDigitalQuality()
-            );
         }
         catch (BookNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
@@ -120,11 +106,15 @@ public class WarehouseController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 ErrorResponse.createStockAlreadyOnSale(e.getIsbn(), stockFormat, stockQuality)
             );
+        } catch (StockPriceNotSetException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ErrorResponse.createStockPriceNotSet(e.getBookIsbn(), stockFormat, stockQuality)
+            );
         }
     }
 
     @PostMapping("/books/{isbn}/stocks/{stockFormat}/{stockQuality}/action/remove-from-sale")
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasAuthority('manage:stocks')")
     public ResponseEntity<?> removeFromSale(
         @PathVariable("isbn") @ISBN String isbn,
         @PathVariable("stockFormat") @ValidStockFormat String stockFormat,
@@ -132,11 +122,6 @@ public class WarehouseController {
     ) {
         StockFormat decodedStockFormat = StockFormatMapper.MAPPER.fromString(stockFormat);
         StockQuality decodedStockQuality = StockQualityMapper.MAPPER.fromString(stockQuality);
-
-        if (decodedStockFormat == StockFormat.EBOOK && decodedStockQuality != StockQuality.DIGITAL)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ErrorResponse.createEbookOnlySupportsDigitalQuality()
-            );
 
         try {
             this.warehouseService.removeStockFromSale(isbn, decodedStockFormat, decodedStockQuality);

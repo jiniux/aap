@@ -76,8 +76,24 @@ public record ErrorResponse(String code, Object details) implements Serializable
         return new ErrorResponse("NOT_ENOUGH_ITEMS_IN_STOCK", Map.of("isbn", isbn, "stockQuality", stockQuality, "stockFormat", stockFormat));
     }
 
+    public static ErrorResponse createStockQuantityNotAvailable(String isbn, String stockQuality, String stockFormat) {
+        return new ErrorResponse("STOCK_QUANTITY_NOT_AVAILABLE", Map.of("isbn", isbn, "stockQuality", stockQuality, "stockFormat", stockFormat));
+    }
+
     public static ErrorResponse createItemsPriceChanged(List<ItemsPriceChangedWhilePlacingOrderException.Info> details) {
         var info = details.stream().map(i -> Map.of("isbn", i.bookIsbn(), "stockFormat", i.stockFormat(), "stockQuality", i.stockQuality(), "oldPrice", i.oldPrice(), "newPrice", i.newPrice())).toList();
         return new ErrorResponse("ITEMS_PRICE_CHANGED", info);
+    }
+
+    public static Object createImageTooBig(long maxSizeInBytes, long actualSizeInBytes) {
+        return new ErrorResponse("IMAGE_TOO_BIG", Map.of("maxSizeInBytes", maxSizeInBytes, "actualSizeInBytes", actualSizeInBytes));
+    }
+
+    public static Object createInvalidImageFormat(Set<String> expectedFormats, String actualFormat) {
+        return new ErrorResponse("INVALID_IMAGE_FORMAT", Map.of("expectedFormats", expectedFormats, "actualFormat", actualFormat));
+    }
+
+    public static Object createStockPriceNotSet(String isbn, String stockFormat, String stockQuality) {
+        return new ErrorResponse("STOCK_PRICE_NOT_SET", Map.of("isbn", isbn, "stockFormat", stockFormat, "stockQuality", stockQuality));
     }
 }

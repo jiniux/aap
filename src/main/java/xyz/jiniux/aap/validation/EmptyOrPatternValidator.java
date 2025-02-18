@@ -3,8 +3,6 @@ package xyz.jiniux.aap.validation;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-import java.util.regex.Pattern;
-
 public class EmptyOrPatternValidator implements ConstraintValidator<EmptyOrPattern, String> {
     private String pattern;
 

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -21,7 +22,7 @@ public class CatalogBook {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 10000)
     private String description;
 
     @Column()
@@ -29,6 +30,10 @@ public class CatalogBook {
 
     @Column()
     private String edition;
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bookId")
+    List<BookFormatPreviewImage> formatPreviewImages;
 
     @ElementCollection
     @CollectionTable(name = "catalog_book_authors", joinColumns = @JoinColumn(name = "catalogBookId"))

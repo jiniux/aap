@@ -1,0 +1,24 @@
+{
+    "landing" : {
+        "logo-image-alt": "The application logo",
+        "slogan": "Buy books in a simple and smart way.",
+        "search-prompt": "Search..."
+    },
+    "not-available": "Not available",
+    "stock-format": {
+        "hardcover": "Hardcover",
+        "paperback": "Paperback",
+        "ebook": "E-book"
+    },
+    "stock-quality": {
+        "new": "New",
+        "like-new": "Like new",
+        "very-good": "Very good",
+        "good": "Good",
+        "acceptable": "Acceptable",
+        "worn": "Bad conditions"
+    },
+    "stock-quality-no-other-qualities-available": "No other qualities available",
+    "stock-quality-no-other-formats-available": "No other formats available",
+    "add-to-cart": "Add to cart"
+}

@@ -1,0 +1,23 @@
+<div class="search-bar">
+    <input [formControl]="searchQueryInput" type="text" class="search-input" placeholder="{{ 'landing.search-prompt' | translate }}">
+    <button class="search-button" (click)="search()">
+        <fa-icon [icon]="'search'"></fa-icon>        
+    </button>
+</div>
+
+
+@if (searchLoading === true) {
+    <app-loading-progress-bar></app-loading-progress-bar>
+} @else if (searchLoading === false) {
+    <div class="search-results">
+        @for (entry of searchResults; track $index) {
+            <app-landing-search-result 
+                [title]="entry.title" 
+                [stocks]="entry.stocks" 
+                [formatPreviewImages]="entry.formatPreviewImages" 
+                [authors]="entry.authors" 
+                [isbn]="entry.isbn"
+            ></app-landing-search-result>
+        }
+    </div>
+}

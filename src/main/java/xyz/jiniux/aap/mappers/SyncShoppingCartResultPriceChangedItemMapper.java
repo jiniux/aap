@@ -7,7 +7,6 @@ import org.mapstruct.factory.Mappers;
 import xyz.jiniux.aap.controllers.results.SyncShoppingCartResultPriceChangedItem;
 import xyz.jiniux.aap.controllers.results.SyncShoppingCartResultRemovedItem;
 import xyz.jiniux.aap.domain.cart.PriceChangedShoppingCartItem;
-import xyz.jiniux.aap.domain.cart.RemovedShoppingCartItem;
 import xyz.jiniux.aap.domain.model.StockFormat;
 import xyz.jiniux.aap.domain.model.StockQuality;
 

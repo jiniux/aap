@@ -34,14 +34,10 @@ public class Stock {
         if (!isOnSale())
             return false;
 
-        if (getFormat() == StockFormat.EBOOK) {
-            return true;
-        }
-
         return getQuantity() > 0;
     }
 
-    @Column(nullable = true)
+    @Column
     private BigDecimal priceEur;
 
     @Column(nullable = false)

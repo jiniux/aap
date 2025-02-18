@@ -1,0 +1,28 @@
+{
+    "landing" : {
+        "logo-image-alt": "The application logo",
+        "slogan": "Compra libri in modo semplice e veloce.",
+        "search-prompt": "Cerca..."
+    },
+    "not-available": "Non disponibile",
+    "stock-format": {
+        "hardcover": "Copertina rigida",
+        "paperback": "Copertina flessibile",
+        "ebook": "E-book"
+    },
+    "stock-quality": {
+        "new": "Nuovo",
+        "like-new": "Come nuovo",
+        "very-good": "Molto buono",
+        "good": "Buono",
+        "acceptable": "Accettabile",
+        "worn": "Cattive condizioni"
+    },
+    "stock-quality-no-other-qualities-available": "Nessun'altra qualità disponibile",
+    "stock-quality-no-other-formats-available": "Nessun altro formato disponibile",
+    "add-to-cart": "Aggiungi al carrello",
+    "book-added-to-cart": "Libro aggiunto al carrello",
+    "not-enough-stocks-when-adding-to-cart": "Non ci altre copie disponibili per questo libro",
+    "unknown-error-when-adding-to-cart": "Errore sconosciuto durante l'aggiunta al carrello",
+    "adding-to-cart": "Aggiunta al carrello..."
+}

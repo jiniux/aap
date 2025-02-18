@@ -1,0 +1,112 @@
+<div class="book-overview">
+    @if (!state.loading) {
+    <div class="book-overview-container">
+        <div class="card">
+            <div class="cover" style="background-image: url('{{ state.result.preview[selectedPreviewIndex].url }}');">
+                <div class="backdrop">
+                    <div class="img"
+                        style="background-image: url('{{ state.result.preview[selectedPreviewIndex].url }}');"></div>
+                </div>
+            </div>
+        </div>
+        <div class="info-panel">
+            <div class="title">
+                {{ state.result.title }}
+                <div class="authors">
+                    {{ state.result.authors }}
+                </div>
+            </div>
+            <div class="format-selector">
+                <div class="format-header" (click)="toggleFormatDropdown()">
+                    <div class="format-w-icon">
+                        <fa-icon [icon]="['fas', 'book']"></fa-icon>
+                        <span class="selected-format">{{ 'stock-format.' + selectedStockFormat | translate }}</span>
+                    </div>
+                    <div class="chevron" [class.open]="isFormatDropdownOpen">
+                        <fa-icon [icon]="['fas', 'chevron-down']"></fa-icon>
+                    </div>
+                </div>
+                <div class="format-content" [class.open]="isFormatDropdownOpen">
+                    @if (stockFormats.length === 1) {
+                    <div class="no-others-available">{{ 'stock-format-no-other-formats-available' | translate }}</div>
+                    } @else {
+                    @for (format of stockFormats; track $index) {
+                    @if (format !== selectedStockFormat) {
+                    <div class="format-option" (click)="selectNewStockFormat(format)">
+                        <div class="format-w-icon">
+                            <fa-icon [icon]="['fas', 'book']"></fa-icon>
+                            <span>{{ 'stock-format.' + format | translate }} </span>
+                        </div>
+                        <div class="price-tag">
+                            <fa-icon [icon]="'tag'"></fa-icon>
+                            €{{ stockQualitiesForSelectedFormat[format][0][1] }}
+                        </div>
+                    </div>
+                    }
+                    }
+                    }
+                </div>
+            </div>
+
+            <div class="quality-selector">
+                <div class="quality-header" (click)="toggleQualityDropdown()">
+                    <div class="quality-w-icon">
+                        <fa-icon
+                            style="color: {{ stockQualitiesForSelectedFormat[selectedStockFormat][selectedStockQualityIndex][2].color }};"
+                            [icon]="['far', stockQualitiesForSelectedFormat[selectedStockFormat][selectedStockQualityIndex][2].emojiName]"></fa-icon>
+                        <span class="selected-quality">{{ 'stock-quality.' +
+                            stockQualitiesForSelectedFormat[selectedStockFormat][selectedStockQualityIndex][0] |
+                            translate }}</span>
+                    </div>
+                    <div class="chevron" [class.open]="isQualityDropdownOpen">
+                        <fa-icon [icon]="['fas', 'chevron-down']"></fa-icon>
+                    </div>
+                </div>
+                <div class="quality-content" [class.open]="isQualityDropdownOpen">
+                    @if (stockQualitiesForSelectedFormat[selectedStockFormat].length === 1) {
+                    <div class="no-others-available">{{ 'stock-quality-no-other-qualities-available' | translate }}
+                    </div>
+                    } @else {
+                    @for (quality of stockQualitiesForSelectedFormat[selectedStockFormat]; track $index) {
+                    @if ($index !== selectedStockQualityIndex) {
+                    <div class="quality-option" (click)="selectNewStockQuality($index)">
+                        <div class="quality-w-icon">
+                            <fa-icon style="color: {{ quality[2].color }};"
+                                [icon]="['far', quality[2].emojiName]"></fa-icon>
+                            <span>{{ 'stock-quality.' + quality[0] | translate }} </span>
+                        </div>
+                        <div class="price-tag">
+                            <fa-icon [icon]="'tag'"></fa-icon>
+                            €{{ quality[1] }}
+                        </div>
+                    </div>
+                    }
+                    }
+                    }
+                </div>
+            </div>
+
+            <div class="buy-section">
+                <div class="final-price">€{{
+                    stockQualitiesForSelectedFormat[selectedStockFormat][selectedStockQualityIndex][1] }}</div>
+
+                <div class="quantity-selector">
+                    <button (click)="decrement()">-</button>
+                    <span class="quantity-value">{{ quantity }}</span>
+                    <button (click)="increment()">+</button>
+                </div>
+                <div class="add-to-cart-button" (click)="addBookToCart()"><fa-icon [icon]="'cart-plus'"></fa-icon>
+                    @if (itemBeingAdded) {
+                        {{ 'adding-to-cart' | translate }}
+                    } @else {
+                        {{ 'add-to-cart' | translate }}
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    } @else {
+    <app-loading-progress-bar></app-loading-progress-bar>
+    }
+
+</div>

@@ -21,6 +21,13 @@ public class Author {
     @Column(nullable = false)
     private String lastName;
 
+    @Column(columnDefinition = "TEXT")
+    private String biography;
+
+    @Lob
+    @Column()
+    private byte[] picture;
+
     @ManyToMany
     @JoinTable(
         name = "catalog_book_authors",

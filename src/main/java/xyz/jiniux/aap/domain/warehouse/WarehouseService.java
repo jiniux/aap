@@ -4,10 +4,7 @@ import lombok.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.jiniux.aap.domain.catalog.exceptions.BookNotFoundException;
-import xyz.jiniux.aap.domain.warehouse.exceptions.NotEnoughItemsInStockException;
-import xyz.jiniux.aap.domain.warehouse.exceptions.StockAlreadyOnSaleException;
-import xyz.jiniux.aap.domain.warehouse.exceptions.StockNotOnSaleException;
-import xyz.jiniux.aap.domain.warehouse.exceptions.UnsupportedStockQualityException;
+import xyz.jiniux.aap.domain.warehouse.exceptions.*;
 import xyz.jiniux.aap.infrastructure.persistency.CatalogBookRepository;
 import xyz.jiniux.aap.infrastructure.persistency.StockRepository;
 import xyz.jiniux.aap.domain.model.CatalogBook;
@@ -40,7 +37,7 @@ public class WarehouseService {
         return stockRepository.findAvailableByBookIsbn(isbn);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void refillStock(
         @NonNull String isbn,
         @NonNull StockFormat stockFormat,
@@ -56,7 +53,7 @@ public class WarehouseService {
         stockRepository.save(stock);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void setStockPrice(
         String isbn,
         @NonNull StockFormat stockFormat,
@@ -74,23 +71,19 @@ public class WarehouseService {
         stockRepository.save(stock);
     }
 
-    public void enforceValidStock(String isbn, StockFormat stockFormat, StockQuality stockQuality) throws UnsupportedStockQualityException {
-        if (stockFormat == StockFormat.EBOOK && stockQuality != StockQuality.DIGITAL)
-            throw new UnsupportedStockQualityException(isbn, stockFormat, stockQuality);
-    }
-
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void putStockOnSale(
         String isbn,
         @NonNull StockFormat stockFormat,
         @NonNull StockQuality stockQuality
-    ) throws BookNotFoundException, StockAlreadyOnSaleException, UnsupportedStockQualityException {
-        enforceValidStock(isbn, stockFormat, stockQuality);
-
+    ) throws BookNotFoundException, StockAlreadyOnSaleException, StockPriceNotSetException {
         CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbnForShare(isbn)
             .orElseThrow(() -> new BookNotFoundException(isbn));
 
         Stock stock = getOrCreateStockForUpdate(catalogBook.getId(), stockFormat, stockQuality);
+
+        if (stock.getPriceEur() == null)
+            throw new StockPriceNotSetException(isbn, stockFormat, stockQuality);
 
         if (stock.isOnSale())
             throw new StockAlreadyOnSaleException(isbn, stockFormat, stockQuality);
@@ -100,7 +93,7 @@ public class WarehouseService {
         stockRepository.save(stock);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void removeStockFromSale(
         @NonNull String isbn,
         @NonNull StockFormat stockFormat,
@@ -119,7 +112,7 @@ public class WarehouseService {
         stockRepository.save(stock);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void reserveStock(
         @NonNull String isbn,
         @NonNull StockFormat stockFormat,
@@ -223,7 +216,7 @@ public class WarehouseService {
         HashMap<String, List<Stock>> stocksByIsbn = new HashMap<>();
 
         for (Stock stock: stocks) {
-            stocksByIsbn.computeIfAbsent(stock.getBook().getIsbn(), (k) -> new ArrayList<>()).add(stock);
+            stocksByIsbn.computeIfAbsent(stock.getBook().getIsbn(), (_) -> new ArrayList<>()).add(stock);
         }
 
         return stocksByIsbn;

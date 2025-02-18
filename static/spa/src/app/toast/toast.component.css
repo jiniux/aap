@@ -1,0 +1,43 @@
+.toast {
+    width: 300px;
+    border-radius: 15px;
+    background-color: #fff;
+    padding: 10px;
+    color: #333;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    text-align: left; /* Added border matching the info icon color */
+}
+
+.toast.info {
+  border: 2px solid #4a90e2;
+}
+
+.toast.error {
+  border: 2px solid #f44336;
+}
+
+.toast.success {
+  border: 2px solid #4caf50;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .info-icon {
+    color: #4a90e2;
+  }
+
+  .error-icon {
+    color: #f44336;
+  }
+
+  .success-icon {
+    color: #4caf50;
+  }
+
+  .message {
+    flex: 1;
+  }

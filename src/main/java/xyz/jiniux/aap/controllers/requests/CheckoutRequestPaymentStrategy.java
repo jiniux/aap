@@ -5,9 +5,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
-import xyz.jiniux.aap.domain.accounting.CreditCardDetails;
-import xyz.jiniux.aap.domain.accounting.CreditCardPaymentStrategy;
-import xyz.jiniux.aap.domain.accounting.PaymentStrategy;
+import xyz.jiniux.aap.domain.billing.CreditCardDetails;
+import xyz.jiniux.aap.domain.billing.CreditCardPaymentStrategy;
+import xyz.jiniux.aap.domain.billing.PaymentStrategy;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,

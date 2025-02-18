@@ -24,8 +24,6 @@ public class ShoppingCart {
     @Column(nullable = false, unique = true)
     private String username;
 
-
-
     @Getter
     @RequiredArgsConstructor
     @EqualsAndHashCode(of = {"isbn", "stockFormat", "stockQuality", "quantity", "priceEur"})
@@ -67,22 +65,32 @@ public class ShoppingCart {
         return itemsMap.values().stream().sorted(Comparator.comparing(Item::getIsbn)).collect(Collectors.toList());
     }
 
-    private void addItem(Item item) {
+    public Item addItem(Item item) {
         ItemKey key = item.createItemKey();
         Item originalItem = itemsMap.get(key);
 
         if (originalItem == null) {
             itemsMap.put(key, item);
+            return item;
         } else {
             originalItem.addQuantity(item.getQuantity());
+            return originalItem;
         }
+    }
+
+    public void removeItem(ItemKey key) {
+        itemsMap.remove(key);
     }
 
     public List<ShoppingCart.Item> removeAllItems(List<ItemKey> keys) {
         List<ShoppingCart.Item> removedItems = new ArrayList<>();
 
-        for (ItemKey key: keys)
-            removedItems.add(itemsMap.remove(key));
+        for (ItemKey key: keys) {
+            Item item = itemsMap.remove(key);
+            if (item != null) {
+                removedItems.add(item);
+            }
+        }
 
         return removedItems;
     }
@@ -92,19 +100,6 @@ public class ShoppingCart {
 
         for (Item item: items) {
             addItem(item);
-        }
-    }
-
-    public void merge(ShoppingCart newShoppingCart) {
-        for (Item item: newShoppingCart.getItems()) {
-            ItemKey key = item.createItemKey();
-
-            if (!itemsMap.containsKey(key)) {
-                addItem(item);
-            } else {
-                Item existingItem = itemsMap.get(key);
-                existingItem.setQuantity(item.getQuantity());
-            }
         }
     }
 
@@ -119,9 +114,4 @@ public class ShoppingCart {
 
         return cart;
     }
-
-    @Version
-    @Getter
-    @Setter
-    private long version;
 }
