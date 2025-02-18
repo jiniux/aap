@@ -11,7 +11,7 @@ export class AppComponent implements OnInit {
   constructor(private readonly cartService: CartService) {}
   
   ngOnInit(): void {
-    this.cartService.
+    this.cartService.reloadCart();
   }
 
   title = 'aap';
