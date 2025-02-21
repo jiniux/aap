@@ -77,5 +77,21 @@
     "checkout-error-stocks-changed": "Alcuni articoli presenti nel carrello non sono più disponibili. La invitiamo a controllare nuovamente il riepilogo del carrello.",
     "checkout-error-shipment-cost-changed": "Il costo di spedizione è cambiato. La invitiamo a controllare nuovamente il riepilogo del carrello.",
     "checkout-success": "L'ordine è stato effettuato con successo. Potrà visualizzare lo stato dell'ordine nell'apposita sezione.",
-    "checkout-success-but-cart-not-cleared": "L'ordine è stato effettuato con successo, ma il carrello non è stato svuotato a causa di una modifica in fase di checkout. Potrà visualizzare lo stato dell'ordine nell'apposita sezione."
+    "checkout-success-but-cart-not-cleared": "L'ordine è stato effettuato con successo, ma il carrello non è stato svuotato a causa di una modifica in fase di checkout. Potrà visualizzare lo stato dell'ordine nell'apposita sezione.",
+    "order-summary": {
+        "id": "ID",
+        "state": "Stato",
+        "placed-at": "Data Ordine",
+        "items": "Articoli",
+        "total": "Totale"
+    },
+    "order-states": {
+        "processing-payment": "In elaborazione di pagamento",
+        "payment-failed": "Pagamento fallito",
+        "confirmed": "Confermato",
+        "shipped": "Spedito",
+        "delivered": "Consegnato",
+        "waiting-confirmation": "In attesa della conferma"
+    },
+    "order-see-details": "Vedi dettagli"
 }

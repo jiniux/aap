@@ -1,9 +1,10 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CartItem, CartService } from '../cart.service';
 import { Router } from '@angular/router';
 import { ToastService } from '../toast.service';
 import * as t from "io-ts"
 import { StockFormat, StockQuality } from '../../utils/types';
+import { emojiFromStockQuality } from '../../utils/emoji-from-stock-quality';
 
 export interface FullCartItem {
   isbn: string;
@@ -22,7 +23,7 @@ export interface FullCartItem {
   templateUrl: './cart-item.component.html',
   styleUrl: './cart-item.component.css'
 })
-export class CartItemComponent {
+export class CartItemComponent implements OnInit {
   @Input() item: FullCartItem = { isbn: '', stockFormat: 'hardcover', stockQuality: 'new', quantity: 0, title: '', authorNames: '', pricing: '', coverUrl: ''};
 
   constructor(
@@ -31,12 +32,22 @@ export class CartItemComponent {
     private readonly router: Router
   ) {}
 
+  public emoji: string = 'smile'
+  public emojiColor: string = 'green'
+  
+  ngOnInit(): void {
+    const { color, emojiName } = emojiFromStockQuality(this.item.stockQuality)
+    
+    this.emojiColor = color
+    this.emoji = emojiName
+  }
+
   isEditing = false;
   tempQuantity: number = 0;
 
   // New flag for removal confirmation
   showRemoveConfirmation = false;
-
+  
   startEditing() {
     this.showRemoveConfirmation = false
     this.tempQuantity = this.item.quantity;

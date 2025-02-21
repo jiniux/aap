@@ -4,5 +4,5 @@ public enum PaymentState {
     PENDING,
     COMPLETED,
     ERRORED_UNKNOWN,
-    ERRORED_NOT_ENOUGH_FOUNDS
+    ERRORED_NOT_ENOUGH_FUNDS
 }

@@ -29,6 +29,9 @@ public class Order {
     @Column(nullable = false)
     private BigDecimal finalPrice;
 
+    @Column(nullable = false)
+    private BigDecimal shipmentCost;
+
     @OneToOne(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     private ShipmentTracking shipmentTracking;
 
@@ -71,6 +74,30 @@ public class Order {
     @Column(columnDefinition = "json")
     @Getter
     private Set<Item> items;
+
+    @Transient
+    public OrderState getState() {
+        if (shipmentTracking != null) {
+            return OrderState.SHIPPED;
+        } else if (confirmed) {
+            return OrderState.CONFIRMED;
+        } else if (payment != null) {
+            if (payment.getState() == PaymentState.COMPLETED)  {
+                return OrderState.WAITING_CONFIRMATION;
+            } else if (payment.getState() == PaymentState.PENDING) {
+                return OrderState.PROCESSING_PAYMENT;
+            } else {
+                return OrderState.PAYMENT_FAILED;
+            }
+        }  else {
+            return OrderState.PROCESSING_PAYMENT;
+        }
+    }
+
+    @Transient
+    public long getItemCount() {
+        return items.stream().mapToLong(Item::getQuantity).sum();
+    }
 
     @Version
     private Long version;

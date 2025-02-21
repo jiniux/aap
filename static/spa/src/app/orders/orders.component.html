@@ -1,1 +1,9 @@
-<p>orders works!</p>
+
+<h1 class="orders-title">
+    Riepilogo ordini
+</h1>
+<div class="orders-container">
+    @for (order of orders; track $index) {
+        <app-order-summary [summary]="order"></app-order-summary>
+    }
+</div>

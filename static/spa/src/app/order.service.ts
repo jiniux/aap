@@ -2,12 +2,49 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import Big from 'big.js';
 import * as t from 'io-ts'
-import { StockFormat, StockQuality } from '../utils/types';
+import { ISO8601Date, OrderState, PaymentState, PriceEur, StockFormat, StockQuality } from '../utils/types';
 import * as m from 'async-mutex'
 import { catchError, from, map, mergeMap, Observable, of, share } from 'rxjs';
 import { ensureValid } from '../ext/io-ts.ext';
 
-const API_CHECKOUT_URL = '/api/order/place'
+const API_CHECKOUT_URL = '/api/orders/action/place'
+const API_GET_ORDERS_SUMMARIES_URL = '/api/orders/'
+const API_GET_ORDERS_URL = '/api/orders/'
+
+const OrderItem = t.type({
+  isbn: t.string,
+  stockFormat: StockFormat,
+  stockQuality: StockQuality,
+  quantity: t.number,
+  priceEur: PriceEur
+});
+
+const OrderPayment = t.type({
+  id: t.string,
+  method: t.literal('credit-card'),
+  state: PaymentState,
+  additionalInfo: t.any
+});
+
+const OrderAddress = t.type({
+  country: t.string,
+  state: t.string,
+  city: t.string,
+  street: t.string,
+  zipCode: t.string,
+  recipientName: t.string
+});
+
+export const FullOrderResult = t.type({
+  id: t.number,
+  state: OrderState,
+  placeAt: ISO8601Date,
+  shipmentCostEur: PriceEur,
+  totalEur: PriceEur,
+  items: t.array(OrderItem),
+  address: OrderAddress,
+  payment: OrderPayment
+});
 
 export interface CreditCardPaymentStrategy {
   type: 'credit_card';
@@ -86,10 +123,25 @@ const CheckoutResult = t.type({
   cartCleared: t.boolean
 })
 
+export const OrderSummary = t.type({
+  id: t.string,
+  state: OrderState,
+  placeAt: ISO8601Date,
+  itemCount: t.number,
+  totalEur: PriceEur
+});
+
+export const OrderSummariesResult = t.type({
+  orders: t.array(OrderSummary)
+});
+
+export type OrderSummary = t.TypeOf<typeof OrderSummary>;
+export type OrderSummariesResult = t.TypeOf<typeof OrderSummariesResult>;
+
 @Injectable({
   providedIn: 'root'
 })
-export class CheckoutService {
+export class OrderService {
   constructor(
     private readonly httpClient: HttpClient
   ) { }
@@ -100,6 +152,19 @@ export class CheckoutService {
 
   public get checkingOut() {
     return this._checkingOut
+  }
+
+  public getOrdersSummaries(): Observable<OrderSummariesResult> {
+    return this.httpClient.get(API_GET_ORDERS_SUMMARIES_URL)
+      .pipe(
+        map(result => ensureValid(OrderSummariesResult.decode(result))),
+      )
+  }
+
+  public getOrder(id: string): Observable<t.TypeOf<typeof FullOrderResult>> {
+    return this.httpClient.get(API_GET_ORDERS_URL + id).pipe(
+      map(result => ensureValid(FullOrderResult.decode(result)))
+    )
   }
 
   public checkout(items: CheckoutItem[], paymentStrategy: PaymentStrategy, address: CheckoutAddress, shipmentCost: Big, cartVersion: number) : Observable<CheckoutResult> {

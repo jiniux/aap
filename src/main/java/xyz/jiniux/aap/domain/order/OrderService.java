@@ -80,7 +80,13 @@ public class OrderService {
     }
 
     private static Stock getStock(Map<String, List<Stock>> stocks, String isbn, StockFormat stockFormat, StockQuality stockQuality) throws StockNotOnSaleException {
-        return stocks.get(isbn).stream()
+        List<Stock> selectedStocks = stocks.get(isbn);
+
+        if (selectedStocks == null) {
+            throw new StockNotOnSaleException(isbn, stockFormat, stockQuality);
+        }
+
+        return selectedStocks.stream()
                 .filter(s -> s.getFormat().equals(stockFormat) && s.getQuality().equals(stockQuality))
                 .findFirst()
                 .orElseThrow(() -> new StockNotOnSaleException(isbn, stockFormat, stockQuality));
@@ -120,11 +126,14 @@ public class OrderService {
             throw new ShipmentCostChangedException(realShipmentCost);
         }
 
+        finalPrice = finalPrice.add(realShipmentCost);
+
         Order order = new Order();
         order.setItems(createOrderItems(shoppingCartItems));
         order.setUsername(username);
         order.setPlacedAt(OffsetDateTime.now(ZoneOffset.UTC));
         order.setFinalPrice(finalPrice);
+        order.setShipmentCost(realShipmentCost);
         order.setAddress(address);
 
         orderRepository.save(order);
@@ -132,6 +141,9 @@ public class OrderService {
         applicationEventPublisher.publishEvent(new OrderPlacedEvent(order.getId(), order.getPlacedAt(), order.getUsername(), order.getFinalPrice(), paymentStrategy));
     }
 
+    public List<Order> getOrdersByUsername(String username) {
+        return orderRepository.findAllByUsername(username);
+    }
 
     private static Set<Order.Item> createOrderItems(List<ShoppingCart.Item> items) {
         return items.stream().map(Order.Item::fromShoppingCartItem).collect(Collectors.toSet());

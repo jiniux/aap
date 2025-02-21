@@ -1,0 +1,9 @@
+.orders-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.orders-title {
+    text-align: left;
+}

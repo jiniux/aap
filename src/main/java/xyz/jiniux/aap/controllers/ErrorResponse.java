@@ -27,6 +27,14 @@ public record ErrorResponse(String code, Object details) implements Serializable
         return new ErrorResponse("BOOK_NOT_FOUND", Map.of("isbn", isbn));
     }
 
+    public static ErrorResponse createOrderNotFound(String id) {
+        return new ErrorResponse("BOOK_NOT_FOUND", Map.of("orderId", id));
+    }
+
+    public static ErrorResponse createNoAccessToOrder(String id) {
+        return new ErrorResponse("NO_ACCESS_TO_ORDER", Map.of("orderId", id));
+    }
+
     public static ErrorResponse createDataIntegrityViolation() {
         return new ErrorResponse("DATA_INTEGRITY_VIOLATION", Map.of());
     }

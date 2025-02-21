@@ -30,9 +30,6 @@ public sealed interface CheckoutRequestPaymentStrategy {
         @Max(99)
         int validYear,
 
-        @Pattern(regexp = "[a-zA-Z0-9. ]+")
-        String address,
-
         @Pattern(regexp = "[a-zA-Z0-9 ]+")
         String tenant,
 
@@ -42,7 +39,7 @@ public sealed interface CheckoutRequestPaymentStrategy {
     ) implements CheckoutRequestPaymentStrategy {
         @Override
         public PaymentStrategy convert() {
-            return new CreditCardPaymentStrategy(new CreditCardDetails(number, validMonth, validYear, address, tenant, csc));
+            return new CreditCardPaymentStrategy(new CreditCardDetails(number, validMonth, validYear, tenant, csc));
         }
     }
 }

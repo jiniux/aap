@@ -6,7 +6,7 @@ import { CartService } from '../cart.service';
 import { debounceTime, Subscription, filter, map, mergeMap, distinctUntilChanged } from 'rxjs';
 import { ShippingService } from '../shipment.service';
 import _ from "lodash"
-import { CheckoutService } from '../checkout.service';
+import { OrderService } from '../order.service';
 import { ToastService } from '../toast.service';
 
 @Component({
@@ -29,7 +29,7 @@ export class CheckoutFormComponent implements OnInit, OnDestroy {
     private readonly fb: FormBuilder, 
     private readonly cartService: CartService,
     private readonly shippingService: ShippingService,
-    private readonly checkoutService: CheckoutService,
+    private readonly orderService: OrderService,
     private readonly toastService: ToastService
   ) {
     this.countryList = Object.entries(countries.countries).map(([code, country]) => ({
@@ -66,7 +66,7 @@ export class CheckoutFormComponent implements OnInit, OnDestroy {
       country: ['', Validators.required],
       creditCard: ['', [Validators.required, Validators.pattern('^[0-9]{16}$')]],
       creditCardTenant: ['', [Validators.required, Validators.pattern('^[a-zA-Z ]+$')]],
-      creditCardCVC: ['', [Validators.required, Validators.pattern('^[0-9]{3,4}$')]],
+      creditCardCVC: ['', [Validators.required, Validators.pattern('^[0-9]{3}$')]],
       creditCardExp: ['', [Validators.required, Validators.pattern('^(0[1-9]|1[0-2])\/[0-9]{2}$')]]
     });
 
@@ -109,7 +109,7 @@ export class CheckoutFormComponent implements OnInit, OnDestroy {
   public emptyCart : boolean = false
 
   submitForm(): void {
-    if (this.checkoutService.checkingOut) {
+    if (this.orderService.checkingOut) {
       return;
     }
 
@@ -117,7 +117,7 @@ export class CheckoutFormComponent implements OnInit, OnDestroy {
       const country = this.checkoutForm.get('country')?.value ?? 'IT';
       const countryCode = countries.getCountryCode(country) || 'IT';
 
-      this.checkoutService.checkout(
+      this.orderService.checkout(
         this.cartService.getItems(),
         {
           type: "credit_card",

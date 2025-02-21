@@ -1,0 +1,18 @@
+<div class="order-summary">
+  <div class="order-field">
+    <strong>{{ 'order-summary.id' | translate }}</strong> {{ summary.id }}
+  </div>
+  <div class="order-field">
+    <strong>{{ 'order-summary.state' | translate }}</strong> {{ 'order-states.' + summary.state | translate }}
+  </div>
+  <div class="order-field">
+    <strong>{{ 'order-summary.placed-at' | translate }}</strong> {{ normalizedPlacedAt }}
+  </div>
+  <div class="order-field">
+    <strong>{{ 'order-summary.items' | translate }}</strong> {{ summary.itemCount }}
+  </div>
+  <div class="order-field">
+    <strong>{{ 'order-summary.total' | translate }}</strong> €{{ summary.totalEur }}
+  </div>
+  <button (click)="onSeeDetails()" class="order-details-button">{{ "order-see-details" | translate }}</button>
+</div>

@@ -2,8 +2,10 @@ package xyz.jiniux.aap.domain.billing;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import xyz.jiniux.aap.domain.model.PaymentMethod;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.random.RandomGenerator;
 
@@ -29,5 +31,18 @@ public class CreditCardPaymentStrategy implements PaymentStrategy {
         }
 
         return PaymentExecutionResult.COMPLETED;
+    }
+
+    @Override
+    public PaymentMethod getMethod() {
+        return PaymentMethod.CREDIT_CARD;
+    }
+
+    @Override
+    public Object getAdditionalInfo() {
+        return Map.of(
+                "number", creditCardDetails.getHiddenNumber(),
+                "tenant", creditCardDetails.tenant(),
+                "expiration", creditCardDetails.validMonth() + "/" + creditCardDetails.validYear());
     }
 }

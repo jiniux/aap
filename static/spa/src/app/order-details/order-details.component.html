@@ -1,0 +1,91 @@
+<div class="order-details-container">
+  <ng-container *ngIf="order$ | async as order">
+    <!-- Loading State -->
+    <div *ngIf="order.type === 'loading'" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading order details...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="order.type === 'error'" class="error-state">
+      <div class="error-icon">!</div>
+      <p>{{ order.error }}</p>
+    </div>
+
+    <!-- Loaded State -->
+    <div *ngIf="order.type === 'loaded'" class="order-content">
+      <!-- Order Header -->
+      <div class="order-header">
+        <h1>Order #{{ order.data.id }}</h1>
+        <div class="order-meta">
+          <span class="order-date">{{ order.data.placeAt }}</span>
+          <span class="order-status">{{ order.data.state }}</span>
+        </div>
+      </div>
+
+      <!-- Order Info Grid -->
+      <div class="info-grid">
+        <!-- Shipping Info -->
+        <div class="info-card shipping-info">
+          <h2>Shipping Address</h2>
+          <div class="card-content">
+            <p class="recipient">{{ order.data.address.recipientName }}</p>
+            <p>{{ order.data.address.street }}</p>
+            <p>{{ order.data.address.city }}, {{ order.data.address.state }}</p>
+            <p>{{ order.data.address.zipCode }}</p>
+            <p>{{ order.data.address.country }}</p>
+          </div>
+        </div>
+
+        <!-- Payment Info -->
+        <div class="info-card payment-info">
+          <h2>Payment Details</h2>
+          <div class="card-content">
+            <p>Method: {{ order.data.payment.method }}</p>
+            <p>Status: {{ order.data.payment.state }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Items -->
+      <div class="items-section">
+        <h2>Order Items</h2>
+        <div class="items-grid">
+          <div *ngFor="let item of order.data.items" class="cart-item">
+            <div class="card">
+              <div class="card-content">
+                <h3>{{ item.isbn }}</h3>
+                <div class="details">
+                  <span class="format">
+                    Format: {{ item.stockFormat }}
+                  </span>
+                  <span class="quality">
+                    Quality: {{ item.stockQuality }}
+                  </span>
+                  <span class="quantity">
+                    Qty: {{ item.quantity }}
+                  </span>
+                  <span class="price">
+                    €{{ item.priceEur }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="order-summary">
+        <div class="summary-row">
+          <span>Shipping Cost:</span>
+          <span>€{{ order.data.shipmentCostEur }}</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total Amount:</span>
+          <span>€{{ order.data.totalEur }}</span>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

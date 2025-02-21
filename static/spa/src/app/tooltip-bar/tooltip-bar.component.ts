@@ -36,6 +36,10 @@ export class TooltipBarComponent implements OnInit {
     this.authService.logout({ logoutParams: { returnTo: window.location.origin } });
   }
 
+  openOrders() {
+    this.router.navigate(['/orders']);
+  }
+
   @HostListener('document:click', ['$event'])
   clickout(event: any) {
     if (!this.eRef.nativeElement.contains(event.target)) {

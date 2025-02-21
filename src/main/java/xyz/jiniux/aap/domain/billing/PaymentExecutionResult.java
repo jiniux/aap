@@ -10,7 +10,7 @@ public enum PaymentExecutionResult {
     public PaymentState toPaymentState() {
         return switch (this) {
             case COMPLETED -> PaymentState.COMPLETED;
-            case ERRORED_NOT_ENOUGH_FUNDS -> PaymentState.ERRORED_NOT_ENOUGH_FOUNDS;
+            case ERRORED_NOT_ENOUGH_FUNDS -> PaymentState.ERRORED_NOT_ENOUGH_FUNDS;
             default -> PaymentState.ERRORED_UNKNOWN;
         };
     }

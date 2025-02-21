@@ -23,6 +23,8 @@ import { OrdersComponent } from './orders/orders.component';
 import { CartComponent } from './cart/cart.component';
 import { CartItemComponent } from './cart-item/cart-item.component';
 import { CheckoutFormComponent } from './checkout-form/checkout-form.component';
+import { OrderSummaryComponent } from './order-summary/order-summary.component';
+import { OrderDetailsComponent } from './order-details/order-details.component';
 
 // AoT requires an exported function for factories
 export function HttpLoaderFactory(http: HttpClient) {
@@ -44,6 +46,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     CartComponent,
     CartItemComponent,
     CheckoutFormComponent,
+    OrderSummaryComponent,
+    OrderDetailsComponent,
   ],
   imports: [
     AuthModule.forRoot({
@@ -60,7 +64,7 @@ export function HttpLoaderFactory(http: HttpClient) {
             uri: '/api/shopping-cart/*',
           },
           {
-            uri: '/api/order/*',
+            uri: '/api/orders/*',
           }
         ]
       },

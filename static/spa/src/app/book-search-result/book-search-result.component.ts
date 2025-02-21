@@ -3,6 +3,7 @@ import { BookSearchResults } from '../catalog.service';
 import Big from 'big.js';
 import { Router } from '@angular/router';
 import { cmpFormatByPriority, cmpQualityByPriority } from '../../utils/stock-priorities';
+import { emojiFromStockQuality } from '../../utils/emoji-from-stock-quality';
 
 type Stock = BookSearchResults[0]['stocks'][0]
 type FormatPreviewImage = BookSearchResults[0]['formatPreviewImages'][0]
@@ -52,6 +53,9 @@ export class LandingSearchResultComponent implements OnInit {
   @Input("formatPreviewImages") public formatPreviewImages: Readonly<FormatPreviewImage[]> = []
   @Input("isbn") public isbn: string = ''
 
+  public emoji: string = 'smile'
+  public emojiColor: string = 'green'
+
   constructor(private readonly route: Router) {}
 
   public summary: {
@@ -71,8 +75,6 @@ export class LandingSearchResultComponent implements OnInit {
   public openOverview() {
     this.route.navigate(['/book', this.isbn])
   }
-
-
 
   ngOnInit(): void {
     this.summary = {
@@ -95,6 +97,11 @@ export class LandingSearchResultComponent implements OnInit {
         hasMoreQualities: qualities.length > 1,
         pricing: "€" + bestStock.priceEur.toFixed(2) 
       }
+
+      const { color, emojiName } = emojiFromStockQuality(bestStock.quality)
+
+      this.emojiColor = color
+      this.emoji = emojiName
     }
   }
 }

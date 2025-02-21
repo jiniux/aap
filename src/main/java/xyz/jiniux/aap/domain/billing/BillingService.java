@@ -30,8 +30,11 @@ public class BillingService {
     @Transactional
     public Payment initiatePayment(PaymentStrategy paymentStrategy, BigDecimal amount) {
         Payment payment = new Payment();
+
         payment.setAmount(amount);
         payment.setState(PaymentState.PENDING);
+        payment.setMethod(paymentStrategy.getMethod());
+        payment.setAdditionalInfo(paymentStrategy.getAdditionalInfo());
 
         paymentRepository.save(payment);
 
@@ -58,6 +61,10 @@ public class BillingService {
         if (payment.getAmount().compareTo(BigDecimal.ZERO) > 0) {
             PaymentState newState = paymentStrategy.execute(payment.getAmount()).toPaymentState();
             payment.setState(newState);
+
+            if (newState == PaymentState.ERRORED_UNKNOWN || newState == PaymentState.ERRORED_NOT_ENOUGH_FUNDS) {
+                applicationEventPublisher.publishEvent(PaymentStateChangeEvent.fromPayment(payment));
+            }
         } else {
             payment.setState(PaymentState.COMPLETED);
         }
