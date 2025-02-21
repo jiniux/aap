@@ -1,13 +1,14 @@
-.card {
+:host {
     position: relative;
-    width: 300px;
-    margin: 20px auto;
+    background: #fff;
+    cursor: pointer;
+}
+
+.card {
+    overflow: hidden;
     border: 1px solid #ddd;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-    background: #fff;
-    cursor: pointer;
 }
 
 .card-content {

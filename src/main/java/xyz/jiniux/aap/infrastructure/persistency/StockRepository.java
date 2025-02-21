@@ -1,6 +1,7 @@
 package xyz.jiniux.aap.infrastructure.persistency;
 
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.Tuple;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -21,13 +22,14 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     @Query("select s from Stock s where s.book.id = :bookId and s.quality = :quality and s.format = :format")
     Optional<Stock> findByBookIdForUpdate(@Param("bookId") long bookId, @Param("format") StockFormat format, @Param("quality") StockQuality quality);
 
-    @Query("select s from Stock s join s.book where s.book.isbn in :isbns ")
-    List<Stock> bulkGetStocksByISBNs(@Param("isbns") List<String> isbns);
+    @Query("select s as stock, s.book.isbn as isbn from Stock s join s.book where s.book.isbn in :isbns ")
+    List<Tuple> bulkGetStocksByISBNs(@Param("isbns") List<String> isbns);
 
     @Query("select s from Stock s join s.book where s.book.isbn = :isbn and s.quantity > 0 and s.onSale = true")
     List<Stock> findAvailableByBookIsbn(String isbn);
 
+
     @Lock(LockModeType.PESSIMISTIC_READ)
-    @Query("select s from Stock s join s.book where s.book.isbn in :isbns ")
-    List<Stock> bulkGetStocksByISBNsForUpdate(@Param("isbns") List<String> isbns);
+    @Query("select s as stock, s.book.isbn as isbn from Stock s join s.book where s.book.isbn in :isbns ")
+    List<Tuple> bulkGetStocksByISBNsForUpdate(@Param("isbns") List<String> isbns);
 }

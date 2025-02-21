@@ -1,0 +1,133 @@
+<div class="checkout-form">
+  <form [formGroup]="checkoutForm" (submit)="submitForm()">
+    <div class="form-group inline">
+      <div class="input-group">
+        <label for="firstName">{{ 'checkout.firstName' | translate }}</label>
+        <input id="firstName" type="text" formControlName="firstName">
+        @if (checkoutForm.get('firstName')?.invalid && checkoutForm.get('firstName')?.touched) {
+        <div class="error">
+          {{ 'checkout.errors.firstName' | translate }}
+        </div>
+        }
+      </div>
+      <div class="input-group">
+        <label for="lastName">{{ 'checkout.lastName' | translate }}</label>
+        <input id="lastName" type="text" formControlName="lastName">
+        @if (checkoutForm.get('lastName')?.invalid && checkoutForm.get('lastName')?.touched) {
+        <div class="error">
+          {{ 'checkout.errors.lastName' | translate }}
+        </div>
+        }
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="address">{{ 'checkout.address' | translate }}</label>
+      <input id="address" type="text" formControlName="address">
+      @if (checkoutForm.get('address')?.invalid && checkoutForm.get('address')?.touched) {
+      <div class="error">
+        {{ 'checkout.errors.address' | translate }}
+      </div>
+      }
+    </div>
+    <div class="form-group inline">
+      <div class="input-group">
+        <label for="city">{{ 'checkout.city' | translate }}</label>
+        <input id="city" type="text" formControlName="city">
+        @if (checkoutForm.get('city')?.invalid && checkoutForm.get('city')?.touched) {
+        <div class="error">
+          {{ 'checkout.errors.city' | translate }}
+        </div>
+        }
+      </div>
+      <div class="input-group">
+        <label for="zipCode">{{ 'checkout.zipCode' | translate }}</label>
+        <input id="zipCode" type="text" formControlName="zipCode">
+        @if (checkoutForm.get('zipCode')?.invalid && checkoutForm.get('zipCode')?.touched) {
+        <div class="error">
+          {{ 'checkout.errors.zipCode' | translate }}
+        </div>
+        }
+      </div>
+    </div>
+    <div class="form-group inline">
+      <div class="input-group">
+        <label for="provinceState">{{ 'checkout.provinceState' | translate }}</label>
+        <input id="provinceState" type="text" formControlName="provinceState">
+        @if (checkoutForm.get('provinceState')?.invalid && checkoutForm.get('provinceState')?.touched) {
+        <div class="error">
+          {{ 'checkout.errors.provinceState' | translate }}
+        </div>
+        }
+      </div>
+      <div class="input-group">
+        <label for="country">{{ 'checkout.country' | translate }}</label>
+        <select id="country" formControlName="country">
+          @for (country of countryList; track country.code) {
+            <option [value]="country.name">{{ country.name }}</option>
+          }        
+        </select>
+        @if (checkoutForm.get('country')?.invalid && checkoutForm.get('country')?.touched) {
+        <div class="error">
+          {{ 'checkout.errors.country' | translate }}
+        </div>
+        }
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="creditCard">{{ 'checkout.creditCard' | translate }}</label>
+      <input id="creditCard" type="text" formControlName="creditCard">
+      @if (checkoutForm.get('creditCard')?.invalid && checkoutForm.get('creditCard')?.touched) {
+      <div class="error">
+        {{ 'checkout.errors.creditCard' | translate }}
+      </div>
+      }
+    </div>
+    <div class="form-group inline">
+      <div class="input-group">
+        <label for="creditCardExp">{{ 'checkout.creditCardExp' | translate }}</label>
+        <input id="creditCardExp" type="text" formControlName="creditCardExp">
+        @if (checkoutForm.get('creditCardExp')?.invalid && checkoutForm.get('creditCardExp')?.touched) {
+        <div class="error">
+          {{ 'checkout.errors.creditCardExp' | translate }}
+        </div>
+        }
+      </div>
+      <div class="input-group">
+        <label for="creditCardCVC">{{ 'checkout.creditCardCVC' | translate }}</label>
+        <input id="creditCardCVC" type="text" formControlName="creditCardCVC">
+        @if (checkoutForm.get('creditCardCVC')?.invalid && checkoutForm.get('creditCardCVC')?.touched) {
+        <div class="error">
+          {{ 'checkout.errors.creditCardCVC' | translate }}
+        </div>
+        }
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="creditCardTenant">{{ 'checkout.creditCardTenant' | translate }}</label>
+      <input id="creditCardTenant" type="text" formControlName="creditCardTenant">
+      @if (checkoutForm.get('creditCardTenant')?.invalid && checkoutForm.get('creditCardTenant')?.touched) {
+      <div class="error">
+        {{ 'checkout.errors.creditCardTenant' | translate }}
+      </div>
+      }
+    </div>
+    <div class="form-group pricing">
+      <div class="cartValue">
+        <label>{{ 'checkout.cartValue' | translate }}</label>
+        <span>€{{ cartValue.toFixed(2) }}</span>
+      </div>
+      <div class="shipmentCost">
+        <label>{{ 'checkout.shipmentCost' | translate }}</label>
+        <span>€{{ shipmentCost.toFixed(2) }}</span>
+      </div>
+      <div class="total">
+        <label>{{ 'checkout.total' | translate }}</label>
+        <span>€{{ total.toFixed(2) }}</span>
+      </div>
+    </div>
+    
+    <button type="submit" [disabled]="checkoutForm.invalid || emptyCart">
+      {{ 'checkout.submit' | translate }}
+    </button>
+  </form>
+</div>

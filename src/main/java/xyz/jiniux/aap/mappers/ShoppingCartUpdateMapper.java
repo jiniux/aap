@@ -6,6 +6,7 @@ import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 import xyz.jiniux.aap.controllers.requests.AddItemShoppingCartRequestItem;
 import xyz.jiniux.aap.controllers.requests.RemoveItemShoppingCartRequestItem;
+import xyz.jiniux.aap.controllers.requests.UpdateItemShoppingCartRequestItem;
 import xyz.jiniux.aap.domain.cart.ShoppingCartUpdate;
 import xyz.jiniux.aap.domain.model.StockFormat;
 import xyz.jiniux.aap.domain.model.StockQuality;
@@ -21,6 +22,10 @@ public interface ShoppingCartUpdateMapper {
     @Mapping(target = "stockFormat", source = "item.stockFormat", qualifiedByName = "parseStockFormat")
     @Mapping(target = "stockQuality", source = "item.stockQuality", qualifiedByName = "parseStockQuality")
     ShoppingCartUpdate.RemoveItem fromRemoveItemRequestItem(RemoveItemShoppingCartRequestItem item);
+
+    @Mapping(target = "stockFormat", source = "item.stockFormat", qualifiedByName = "parseStockFormat")
+    @Mapping(target = "stockQuality", source = "item.stockQuality", qualifiedByName = "parseStockQuality")
+    ShoppingCartUpdate.UpdateItem fromUpdateItemRequestItem(UpdateItemShoppingCartRequestItem item);
 
     @Named("parseStockQuality")
     static StockQuality parseStockQuality(String value) {

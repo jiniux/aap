@@ -1,0 +1,27 @@
+.upper-cart-container {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 20px;
+}
+
+.cart-title {
+    text-align: left;
+}
+
+.cart-container {
+    border-radius: 10px;
+    padding: 20px;
+    border: solid 2px rgb(218, 218, 218);
+    grid-column: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: start;
+    justify-content: left;
+}
+
+.cart-container p {
+    grid-column: 2;
+}

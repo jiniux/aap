@@ -1,0 +1,120 @@
+.checkout-form {
+  max-width: 400px;
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  border: solid 2px rgb(134, 134, 134);
+  height: auto; /* remove or override the fixed height */
+}
+
+.checkout-form .form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.checkout-form label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.checkout-form input {
+  padding: 10px 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: border-color 0.2s ease;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.checkout-form input:focus {
+  border-color: #0b34dc;
+  outline: none;
+}
+
+.checkout-form select {
+  padding: 10px 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: border-color 0.2s ease;
+  width: 100%; 
+  max-width: 100%;  
+  box-sizing: border-box; 
+}
+
+.checkout-form select:focus {
+  border-color: #0b34dc;
+  outline: none;
+}
+
+.checkout-form .error {
+  color: #e53935;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.checkout-form .pricing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+  flex-direction: row;
+  gap: 20px;
+}
+
+
+
+.checkout-form .pricing > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: column;
+}
+
+
+.checkout-form button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-top: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.checkout-form button:hover {
+  background-color: #43a047;
+}
+
+.checkout-form button[disabled] {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.checkout-form .inline {
+  display: flex;
+  gap: 16px;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  flex-direction: row !important;
+}
+
+.checkout-form .inline .input-group {
+    flex: 1;
+  display: flex;
+  flex-direction: column;
+}

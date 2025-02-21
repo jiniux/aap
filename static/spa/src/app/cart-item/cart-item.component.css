@@ -1,0 +1,155 @@
+.cart-item .card {
+    position: relative;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    background: #fff;
+    cursor: pointer;
+}
+
+.cart-item .card-content {
+    padding: 10px 20px;
+    text-align: center;
+}
+
+.cart-item .card h2 {
+    font-size: 18px;
+    margin: 10px 0;
+}
+
+.cart-item .card p {
+    font-size: 14px;
+    color: #666;
+}
+
+.cart-item .details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.cart-item .details .price,
+.cart-item .details .format {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    gap: 5px;
+}
+
+.cart-item .cover {
+    height: 300px;
+    width: 100%;
+}
+
+.cart-item .cover .backdrop {
+    height: 100%;
+    width: 100%;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.cart-item .cover .backdrop .img {
+    height: 100%;
+    width: 100%;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.cart-item .status {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.cart-item .card fa-icon {
+    font-size: 16px;
+    color: #333;
+}
+
+.cart-item .card .not-available {
+    background: black;
+    width: 100%;
+    color: white;
+    padding: 4px;
+}
+
+.cart-item .quantity-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.cart-item .quantity-display {
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 4px;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cart-item .quantity-edit {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.cart-item .quantity-edit input {
+    width: 60px;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.cart-item .quantity-edit button, .cart-item .remove-btn, .remove-confirmation button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.cart-item .quantity-edit button:first-of-type {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.cart-item .quantity-edit button:last-of-type {
+    background-color: #f44336;
+    color: white;
+}
+
+.cart-item .remove-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.cart-item button:hover {
+    opacity: 0.9;
+}
+
+.cart-item .remove-confirmation {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.cart-item .remove-confirmation #confirm {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.cart-item .remove-confirmation #cancel {
+    background-color: #f44336;
+    color: white;
+}

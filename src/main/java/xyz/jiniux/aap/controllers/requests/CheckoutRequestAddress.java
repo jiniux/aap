@@ -12,8 +12,6 @@ public record CheckoutRequestAddress(
     @NotBlank
     String street,
     @NotBlank
-    String number,
-    @NotBlank
     String zipCode,
     @NotBlank
     String recipientName

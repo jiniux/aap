@@ -36,6 +36,33 @@ public sealed class ShoppingCartUpdate {
         }
     }
 
+    @Getter
+    @EqualsAndHashCode(callSuper = false)
+    public static final class UpdateItem extends ShoppingCartUpdate {
+        private final String isbn;
+        private final StockFormat stockFormat;
+        private final StockQuality stockQuality;
+        private final long quantity;
+
+        public UpdateItem(String isbn, StockFormat stockFormat, StockQuality stockQuality, long quantity) {
+            this.isbn = isbn;
+            this.stockFormat = stockFormat;
+            this.stockQuality = stockQuality;
+
+            if (quantity <= 0)
+                throw new IllegalArgumentException("Quantity must be greater than 0");
+
+            this.quantity = quantity;
+        }
+
+        public ShoppingCart.Item toItem() {
+            ShoppingCart.Item item = new ShoppingCart.Item(isbn, stockFormat, stockQuality);
+            item.setQuantity(quantity);
+
+            return item;
+        }
+    }
+
     @AllArgsConstructor
     @Getter
     @EqualsAndHashCode(callSuper = false)

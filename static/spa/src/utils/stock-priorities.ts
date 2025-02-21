@@ -17,7 +17,6 @@ export const StockQualityPriority: { [key in StockQualityT]: number } = {
 export const StockFormatPriority: { [key in StockFormatT]: number } = {
     'hardcover': 0,
     'paperback': 1,
-    'ebook': 2
 }
 
 export function cmpQualityByPriority(q1: StockQualityT, q2: StockQualityT): number {

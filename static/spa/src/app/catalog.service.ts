@@ -37,6 +37,14 @@ export const BookSearchResultEntry = t.type({
   )
 });
 
+export const BookStocks = t.array(
+  t.type({
+    format: StockFormat,
+    quality: StockQuality,
+    priceEur: PriceEur
+  })
+)
+
 const FullCatalogBookResult = t.type({
   title: t.string,
   isbn: t.string,
@@ -54,13 +62,7 @@ const FullCatalogBookResult = t.type({
     id: t.string,
     name: t.string
   }),
-  stocks: t.array(
-    t.type({
-      format: StockFormat,
-      quality: StockQuality,
-      priceEur: PriceEur
-    })
-  ),
+  stocks: BookStocks,
   formatPreviewImages: t.array(
     t.type({
       url: t.string,
@@ -79,16 +81,16 @@ export type BookSearchResults = t.TypeOf<typeof BookSearchResult>;
   providedIn: 'root'
 })
 export class CatalogService {
-  constructor(private readonly httpClient: HttpClient) {}
+  constructor(private readonly httpClient: HttpClient) { }
 
   searchBooks(query: string): Observable<BookSearchResults> {
-    return this.httpClient.get(API_SEARCH_BOOKS + "?query=" + query, {  }).pipe(map((response: any) => {
+    return this.httpClient.get(API_SEARCH_BOOKS + "?query=" + query, {}).pipe(map((response: any) => {
       return ensureValid(BookSearchResult.decode(response));
     }))
   }
 
   getBook(isbn: string): Observable<t.TypeOf<typeof FullCatalogBookResult>> {
-    return this.httpClient.get(API_SEARCH_BOOKS + "/" + isbn, {  }).pipe(map((response: any) => {
+    return this.httpClient.get(API_SEARCH_BOOKS + "/" + isbn, {}).pipe(map((response: any) => {
       return ensureValid(FullCatalogBookResult.decode(response));
     }))
   }

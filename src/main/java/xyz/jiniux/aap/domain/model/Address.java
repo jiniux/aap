@@ -9,7 +9,6 @@ public record Address(
     String state,
     String city,
     String street,
-    String number,
     String zipCode,
     String recipientName
 ) implements Serializable {}

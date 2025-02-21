@@ -44,7 +44,6 @@ public class Order {
         @AttributeOverride( name = "state", column = @Column(name = "address_state", nullable = false)),
         @AttributeOverride( name = "city", column = @Column(name = "address_city", nullable = false)),
         @AttributeOverride( name = "street", column = @Column(name = "address_street", nullable = false)),
-        @AttributeOverride( name = "number", column = @Column(name = "address_number", nullable = false)),
         @AttributeOverride( name = "zipCode", column = @Column(name = "address_zip_code", nullable = false)),
         @AttributeOverride( name = "recipientName", column = @Column(name = "address_recipient_name", nullable = false)),
     })
@@ -60,10 +59,11 @@ public class Order {
         private final String isbn;
         private final StockFormat stockFormat;
         private final StockQuality stockQuality;
+        private BigDecimal priceEur;
         private final long quantity;
 
         public static Item fromShoppingCartItem(ShoppingCart.Item item) {
-            return new Item(item.getIsbn(), item.getStockFormat(), item.getStockQuality(), item.getQuantity());
+            return new Item(item.getIsbn(), item.getStockFormat(), item.getStockQuality(), item.getPriceEur(), item.getQuantity());
         }
     }
 

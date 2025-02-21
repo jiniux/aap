@@ -9,11 +9,11 @@ type FormatPreviewImage = BookSearchResults[0]['formatPreviewImages'][0]
 type Author = BookSearchResults[0]['authors'][0]
 type Publisher = BookSearchResults[0]['publisher']
 
-function computeUpperAndLowerPrice(stocks: Readonly<Stock[]>): Big {
+function computeBestStock(stocks: Readonly<Stock[]>): Stock {
   const tmp = new Array<Stock>(...stocks)
 
   if (tmp.length === 1) {
-    return tmp[0].priceEur
+    return tmp[0]
   } 
 
   tmp.sort((a, b) => {
@@ -32,10 +32,7 @@ function computeUpperAndLowerPrice(stocks: Readonly<Stock[]>): Big {
     return a.priceEur.cmp(b.priceEur)
   })
   
-
-  const lp = tmp[0].priceEur;
-
-  return lp
+  return tmp[0]
 }
 
 @Component({
@@ -75,6 +72,8 @@ export class LandingSearchResultComponent implements OnInit {
     this.route.navigate(['/book', this.isbn])
   }
 
+
+
   ngOnInit(): void {
     this.summary = {
       authorNames: this.authors.map(author => `${author.firstName} ${author.lastName}`).join(", "),
@@ -84,17 +83,17 @@ export class LandingSearchResultComponent implements OnInit {
     }
 
     if (this.stocks.length !== 0) {
-      const pricing = computeUpperAndLowerPrice(this.stocks)
+      const bestStock = computeBestStock(this.stocks)
       const formats = this.stocks.map(s => s.format)
       const qualities = this.stocks.map(s => s.quality)
       
       this.summary.supply = {
         available: true,
-        formats: formats[0],
-        qualities: qualities[0],
+        formats: bestStock.format,
+        qualities: bestStock.quality,
         hasMoreFormats: formats.length > 1,
         hasMoreQualities: qualities.length > 1,
-        pricing: "€" + pricing.toFixed(2) 
+        pricing: "€" + bestStock.priceEur.toFixed(2) 
       }
     }
   }

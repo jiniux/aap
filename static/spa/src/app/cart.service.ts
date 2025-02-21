@@ -1,20 +1,31 @@
 import { Injectable, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, Subject } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { from, Observable, of, Subject } from 'rxjs';
+import { catchError, map, mergeMap } from 'rxjs/operators';
 import * as t from 'io-ts';
 import { API_URL } from '../constants';
 import { ensureValid } from '../ext/io-ts.ext';
 import { PriceEur, StockFormat, StockQuality } from '../utils/types';
 
 import * as m from 'async-mutex'
-import _, { join } from 'lodash';
+import _, { flatMap, join } from 'lodash';
+import Big from 'big.js';
 
 interface AddItemToShoppingCartRequestItem {
   isbn: string;
   stockFormat: t.TypeOf<typeof StockFormat>;
   stockQuality: t.TypeOf<typeof StockQuality>;
   quantity: number;
+}
+
+interface RemoveItemFromShoppingCartRequestItem {
+  isbn: string;
+  stockFormat: t.TypeOf<typeof StockFormat>;
+  stockQuality: t.TypeOf<typeof StockQuality>;
+}
+
+interface RemoveItemFromShoppingCartRequest {
+  item: RemoveItemFromShoppingCartRequestItem;
 }
 
 interface AddItemToShoppingCartRequest {
@@ -25,7 +36,8 @@ const SyncShoppingCartResultItem = t.type({
   isbn: t.string,
   stockFormat: StockFormat,
   stockQuality: StockQuality,
-  quantity: t.number
+  quantity: t.number,
+  priceEur: PriceEur
 });
 
 type SyncShoppingCartResultItem = t.TypeOf<typeof SyncShoppingCartResultItem>;
@@ -42,8 +54,8 @@ const SyncShoppingCartResultPriceChangedItem = t.type({
   isbn: t.string,
   stockFormat: StockFormat,
   stockQuality: StockQuality,
-  oldPrice: PriceEur,
-  newPrice: PriceEur
+  oldPriceEur: PriceEur,
+  newPriceEur: PriceEur
 });
 
 type SyncShoppingCartResultPriceChangedItem = t.TypeOf<typeof SyncShoppingCartResultPriceChangedItem>;
@@ -52,41 +64,66 @@ const SyncShoppingCartResult = t.type({
   items: t.array(SyncShoppingCartResultItem),
   removedItems: t.array(SyncShoppingCartResultRemovedItem),
   priceChangedItems: t.array(SyncShoppingCartResultPriceChangedItem),
+  version: t.number
 });
 
 type SyncShoppingCartResult = t.TypeOf<typeof SyncShoppingCartResult>;
 
+const API_SHOPPING_CART_SYNC = `${API_URL}/shopping-cart/sync`;
 const API_SHOPPING_CART_ADD_ITEM_URL = `${API_URL}/shopping-cart/action/add-item`;
+const API_SHOPPING_CART_EDIT_ITEM_URL = `${API_URL}/shopping-cart/action/edit-item`;
 const API_SHOPPING_CART_REMOVE_ITEM_URL = `${API_URL}/shopping-cart/action/remove-item`;
 
-interface CartItem {
+export interface CartItem {
+  isbn: string;
+  stockFormat: t.TypeOf<typeof StockFormat>;
+  stockQuality: t.TypeOf<typeof StockQuality>;
+  quantity: number;
+  priceEur: Big
+}
+
+export interface CartItemWithoutPrice {
   isbn: string;
   stockFormat: t.TypeOf<typeof StockFormat>;
   stockQuality: t.TypeOf<typeof StockQuality>;
   quantity: number;
 }
 
-interface CartItemKey {
+export interface CartItemKey {
   isbn: string;
   stockFormat: t.TypeOf<typeof StockFormat>;
   stockQuality: t.TypeOf<typeof StockQuality>;
 }
 
-interface RemovedCartItem {
+export interface RemovedCartItem {
   isbn: string;
   stockFormat: t.TypeOf<typeof StockFormat>;
   stockQuality: t.TypeOf<typeof StockQuality>;
 }
 
-interface PriceChangedCartItem {
+export interface PriceChangedCartItem {
   isbn: string;
   stockFormat: t.TypeOf<typeof StockFormat>;
   stockQuality: t.TypeOf<typeof StockQuality>;
-  oldPrice: t.TypeOf<typeof PriceEur>;
-  newPrice: t.TypeOf<typeof PriceEur>;
+  oldPriceEur: t.TypeOf<typeof PriceEur>;
+  newPriceEur: t.TypeOf<typeof PriceEur>;
 }
 
 type AddCartItemResult = {
+  type: 'success'
+} | {
+  type: 'not_enough_stocks'
+} | {
+  type: 'unkown_error'
+}
+
+type RemoveItemFromCartResult = {
+  type: 'success'
+} | {
+  type: 'unkown_error'
+}
+
+type UpdateCartItemResult = {
   type: 'success'
 } | {
   type: 'not_enough_stocks'
@@ -116,15 +153,20 @@ export class CartService {
   }
 
   private items: CartItem[] = [];
+  private _cartVersion: number = 0;
+
+  public get cartVersion() { return this._cartVersion; }
 
   private subject: Subject<CartEvent> = new Subject();
+  private itemsUpdateSubject: Subject<CartItem[]> = new Subject();
 
   public get events() { return this.subject.asObservable(); }
+  public get itemsUpdate() { return this.itemsUpdateSubject.asObservable(); }
 
   private priceChangedItems: { [key: string]: { oldPrice: Big.Big, newPrice: Big.Big } } = {}
   private removedItems: Set<string> = new Set()
 
-  private mutex = m
+  private mutex = new m.Mutex()
   private itemsBeingAdded: Set<string> = new Set()
 
   private loadCartFromLocalStorage() {
@@ -143,10 +185,29 @@ export class CartService {
   }
 
   public reloadCart() {
-  
+    this.mutex.acquire().then(release => {
+      this.http.get<SyncShoppingCartResult>(API_SHOPPING_CART_SYNC)
+        .subscribe({
+          next: res => {
+            const result = ensureValid(SyncShoppingCartResult.decode(res));
+            this._cartVersion = result.version
+
+            this.processNewItems(result.items);
+            this.processRemovedItems(result.removedItems);
+            this.processPriceChangedItems(result.priceChangedItems);
+
+            this.saveCartToLocalStorage();
+
+            release()
+          },
+          error: () => {
+            release()
+          }
+        })
+    })
   }
 
-  public addBookToCart(item: CartItem): Observable<AddCartItemResult> {
+  public addBookToCart(item: CartItemWithoutPrice): Observable<AddCartItemResult> {
     const request: AddItemToShoppingCartRequest = {
       item: {
         isbn: item.isbn,
@@ -160,41 +221,133 @@ export class CartService {
 
     this.itemsBeingAdded.add(key)
 
-    return this.http.post<AddCartItemResult>(API_SHOPPING_CART_ADD_ITEM_URL, request).pipe(
-      map(res => {
-        const result = ensureValid(SyncShoppingCartResult.decode(res));
+    return from(this.mutex.acquire().then(release => {
+      return this.http.post<AddCartItemResult>(API_SHOPPING_CART_ADD_ITEM_URL, request, {}).pipe(
+        map(res => {
+          const result = ensureValid(SyncShoppingCartResult.decode(res));
+          this._cartVersion = result.version
 
-        this.processNewItems(result.items);
-        this.processRemovedItems(result.removedItems);
-        this.processPriceChangedItems(result.priceChangedItems);
+          this.processNewItems(result.items);
+          this.processRemovedItems(result.removedItems);
+          this.processPriceChangedItems(result.priceChangedItems);
 
-        this.saveCartToLocalStorage();
-        
-        this.itemsBeingAdded.delete(key)
+          this.saveCartToLocalStorage();
 
-        return { type: 'success' as const };
-      }),
-      catchError(({error}) => {
-        this.itemsBeingAdded.delete(key)
+          this.itemsBeingAdded.delete(key)
+          release()
 
-        if (error !== undefined) {
-          if (error.code === 'STOCK_QUANTITY_NOT_AVAILABLE') {
-            return of({ type: 'not_enough_stocks' as const });
+          return { type: 'success' as const };
+        }),
+        catchError(({ error }) => {
+          this.itemsBeingAdded.delete(key)
+          release()
+
+          if (error !== undefined && error !== null) {
+            if (error.code === 'STOCK_QUANTITY_NOT_AVAILABLE') {
+              return of({ type: 'not_enough_stocks' as const });
+            }
           }
+
+          return of({ type: 'unkown_error' as const });
+        })
+      );
+    })).pipe(
+      mergeMap((x: Observable<AddCartItemResult>) => x)
+    )
+  }
+
+  public removeCartItem(isbn: string, stockFormat: t.TypeOf<typeof StockFormat>, stockQuality: t.TypeOf<typeof StockQuality>): Observable<RemoveItemFromCartResult> {
+    const request: RemoveItemFromShoppingCartRequest = {
+      item: {
+        isbn: isbn,
+        stockFormat,
+        stockQuality,
+      }
+    };
+
+    return from(this.mutex.acquire().then(release => {
+      return this.http.post(`${API_SHOPPING_CART_REMOVE_ITEM_URL}`, request).pipe(
+        map(res => {
+          const result = ensureValid(SyncShoppingCartResult.decode(res));
+          this._cartVersion = result.version
+
+          this.processNewItems(result.items);
+          this.processRemovedItems(result.removedItems);
+          this.processPriceChangedItems(result.priceChangedItems);
+
+          this.saveCartToLocalStorage();
+
+          release()
+
+          return { type: 'success' as const };
+        }),
+        catchError(({ error }) => {
+          console.log(error)
+          release()
+
+          return of({ type: 'unkown_error' as const });
+        })
+      );
+    })).pipe(
+      mergeMap((x: Observable<RemoveItemFromCartResult>) => x)
+    )
+  }
+
+  public getItems(): CartItem[] {
+    return [...this.items];
+  }
+
+  public editQuantity(itemKey: CartItemKey, quantity: number): Observable<UpdateCartItemResult> {
+    return from(this.mutex.acquire().then(release => {
+      return this.http.post<SyncShoppingCartResult>(API_SHOPPING_CART_EDIT_ITEM_URL, {
+        item: {
+          isbn: itemKey.isbn,
+          stockFormat: itemKey.stockFormat,
+          stockQuality: itemKey.stockQuality,
+          quantity: quantity
         }
-        
-        return of({ type: 'unkown_error' as const });
-      })
-    );
+      }).pipe(
+        map(res => {
+          const result = ensureValid(SyncShoppingCartResult.decode(res));
+          this._cartVersion = result.version
+
+          this.processNewItems(result.items);
+          this.processRemovedItems(result.removedItems);
+          this.processPriceChangedItems(result.priceChangedItems);
+
+          this.saveCartToLocalStorage();
+
+          release()
+
+          return { type: 'success' as const };
+        }),
+        catchError(({ error }) => {
+          release()
+
+          if (error !== undefined && error !== null) {
+            if (error.code === 'STOCK_QUANTITY_NOT_AVAILABLE') {
+              return of({ type: 'not_enough_stocks' as const });
+            }
+          }
+
+          return of({ type: 'unkown_error' as const });
+        })
+      );
+    })).pipe(
+      mergeMap((x: Observable<UpdateCartItemResult>) => x)
+    )
   }
 
   private processNewItems(newItems: SyncShoppingCartResultItem[]) {
     this.subject.next({ type: 'items-added', item: newItems });
+    this.itemsUpdateSubject.next(newItems);
     this.items = newItems
   }
 
   private processRemovedItems(removedItems: SyncShoppingCartResultRemovedItem[]) {
-    this.subject.next({ type: 'items-removed', item: removedItems });
+    if (removedItems.length > 0) {
+      this.subject.next({ type: 'items-removed', item: removedItems });
+    }
 
     removedItems.forEach(removedItem => {
       this.removedItems.add(removedItem.isbn);
@@ -202,14 +355,18 @@ export class CartService {
   }
 
   private processPriceChangedItems(priceChangedItems: SyncShoppingCartResultPriceChangedItem[]) {
+    if (priceChangedItems.length > 0) {
+      this.subject.next({ type: 'items-price-changed', item: priceChangedItems });
+    }
+
     priceChangedItems.forEach(priceChangedItem => {
       const key = join([priceChangedItem.isbn, priceChangedItem.stockFormat, priceChangedItem.stockQuality], ',')
       const mappedPriceChangedItem = this.priceChangedItems[key]
 
       if (mappedPriceChangedItem === undefined) {
-        this.priceChangedItems[key] = { oldPrice: priceChangedItem.oldPrice, newPrice: priceChangedItem.newPrice }
+        this.priceChangedItems[key] = { oldPrice: priceChangedItem.oldPriceEur, newPrice: priceChangedItem.newPriceEur }
       } else {
-        mappedPriceChangedItem.newPrice = priceChangedItem.newPrice
+        mappedPriceChangedItem.newPrice = priceChangedItem.newPriceEur
       }
     })
   }

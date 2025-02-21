@@ -1,5 +1,9 @@
 package xyz.jiniux.aap.domain.warehouse;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.Tuple;
 import lombok.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +26,16 @@ import java.util.Map;
 public class WarehouseService {
     private final CatalogBookRepository catalogBookRepository;
     private final StockRepository stockRepository;
+    private final EntityManager entityManager;
 
-    public WarehouseService(CatalogBookRepository catalogBookRepository, StockRepository stockRepository) {
+    public WarehouseService(
+        CatalogBookRepository catalogBookRepository,
+        StockRepository stockRepository,
+        EntityManager entityManager
+    ) {
         this.catalogBookRepository = catalogBookRepository;
         this.stockRepository = stockRepository;
+        this.entityManager = entityManager;
     }
 
     private Stock getOrCreateStockForUpdate(long bookId, StockFormat format, StockQuality quality) {
@@ -113,22 +123,20 @@ public class WarehouseService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void reserveStock(
-        @NonNull String isbn,
-        @NonNull StockFormat stockFormat,
-        @NonNull StockQuality stockQuality,
-        long quantity
-    ) throws BookNotFoundException, StockNotOnSaleException, NotEnoughItemsInStockException {
-        CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbnForShare(isbn)
-                .orElseThrow(() -> new BookNotFoundException(isbn));
-
-        Stock stock = getOrCreateStockForUpdate(catalogBook.getId(), stockFormat, stockQuality);
+    public void reserveStock(Stock stock, long quantity, boolean lock) throws NotEnoughItemsInStockException, StockNotOnSaleException {
+        try {
+            if (lock) {
+                entityManager.refresh(stock, LockModeType.PESSIMISTIC_WRITE);
+            }
+        } catch (EntityNotFoundException e) {
+            throw new StockNotOnSaleException(stock.getBook().getIsbn(), stock.getFormat(), stock.getQuality());
+        }
 
         if (!stock.isOnSale())
-            throw new StockNotOnSaleException(isbn, stockFormat, stockQuality);
+            throw new StockNotOnSaleException(stock.getBook().getIsbn(), stock.getFormat(), stock.getQuality());
 
         if (stock.getQuantity() < quantity)
-            throw new NotEnoughItemsInStockException(isbn, stockFormat, stockQuality, quantity);
+            throw new NotEnoughItemsInStockException(stock.getBook().getIsbn(), stock.getFormat(), stock.getQuality(), quantity);
 
         stock.removeQuantity(quantity);
 
@@ -148,7 +156,7 @@ public class WarehouseService {
 
     @Transactional(readOnly = true)
     public List<Long> checkStocksAvailability(List<CheckStockAvailabilityQuery> availabilityQueries, boolean lock) {
-        List<Stock> stocks;
+        List<Tuple> stocks;
 
         if (lock)
             stocks = stockRepository.bulkGetStocksByISBNs(availabilityQueries.stream().map(CheckStockAvailabilityQuery::isbn).toList());
@@ -188,9 +196,14 @@ public class WarehouseService {
         StockQuality stockQuality
     ) {}
 
+    public Map<String, List<Stock>> bulkGetStocksByISBNsForUpdate(List<String> isbns) {
+        List<Tuple> stocks = stockRepository.bulkGetStocksByISBNsForUpdate(isbns);
+        return createStockMap(stocks);
+    }
+
     @Transactional(readOnly = true)
     public List<BigDecimal> getStockPricesEur(List<GetStockPriceQuery> queries) {
-        List<Stock> stocks = stockRepository.bulkGetStocksByISBNs(queries.stream().map(GetStockPriceQuery::isbn).toList());
+        List<Tuple> stocks = stockRepository.bulkGetStocksByISBNs(queries.stream().map(GetStockPriceQuery::isbn).toList());
         Map<String, List<Stock>> stocksByIsbn = createStockMap(stocks);
 
         List<BigDecimal> pricesEur = new ArrayList<>();
@@ -209,14 +222,20 @@ public class WarehouseService {
             pricesEur.add(priceEur);
         }
 
+
+
         return pricesEur;
     }
 
-    private static Map<String, List<Stock>> createStockMap(List<Stock> stocks) {
+    private static Map<String, List<Stock>> createStockMap(List<Tuple> tuples) {
         HashMap<String, List<Stock>> stocksByIsbn = new HashMap<>();
 
-        for (Stock stock: stocks) {
-            stocksByIsbn.computeIfAbsent(stock.getBook().getIsbn(), (_) -> new ArrayList<>()).add(stock);
+        for (Tuple tuple: tuples) {
+
+            Stock stock = tuple.get("stock", Stock.class);
+            String isbn = tuple.get("isbn", String.class);
+
+            stocksByIsbn.computeIfAbsent(isbn, (_) -> new ArrayList<>()).add(stock);
         }
 
         return stocksByIsbn;

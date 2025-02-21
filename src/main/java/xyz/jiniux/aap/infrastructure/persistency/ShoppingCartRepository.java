@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface ShoppingCartRepository extends JpaRepository<ShoppingCart, Long> {
     Optional<ShoppingCart> findCartByUsername(@NonNull String username);
 
-    @Lock(LockModeType.PESSIMISTIC_FORCE_INCREMENT)
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from ShoppingCart c where c.username = :username")
     Optional<ShoppingCart> findCartByUsernameForUpdate(@Param("username") @NonNull String username);
 }

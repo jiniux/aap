@@ -9,5 +9,6 @@ public record PriceChangedShoppingCartItem(
     String isbn,
     StockFormat stockFormat,
     StockQuality stockQuality,
+    BigDecimal oldPriceEur,
     BigDecimal newPriceEur
 ) {}

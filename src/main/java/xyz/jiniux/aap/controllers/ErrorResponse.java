@@ -80,6 +80,10 @@ public record ErrorResponse(String code, Object details) implements Serializable
         return new ErrorResponse("STOCK_QUANTITY_NOT_AVAILABLE", Map.of("isbn", isbn, "stockQuality", stockQuality, "stockFormat", stockFormat));
     }
 
+    public static ErrorResponse createItemNotFoundInCart(String isbn, String stockQuality, String stockFormat) {
+        return new ErrorResponse("ITEM_NOT_FOUND_IN_CART", Map.of("isbn", isbn, "stockQuality", stockQuality, "stockFormat", stockFormat));
+    }
+
     public static ErrorResponse createItemsPriceChanged(List<ItemsPriceChangedWhilePlacingOrderException.Info> details) {
         var info = details.stream().map(i -> Map.of("isbn", i.bookIsbn(), "stockFormat", i.stockFormat(), "stockQuality", i.stockQuality(), "oldPrice", i.oldPrice(), "newPrice", i.newPrice())).toList();
         return new ErrorResponse("ITEMS_PRICE_CHANGED", info);

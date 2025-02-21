@@ -4,6 +4,7 @@ import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
+import xyz.jiniux.aap.domain.cart.exceptions.ItemNotFoundInCartException;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -78,8 +79,24 @@ public class ShoppingCart {
         }
     }
 
+    public Item updateItem(Item item) throws ItemNotFoundInCartException {
+        ItemKey key = item.createItemKey();
+        Item originalItem = itemsMap.get(key);
+
+        if (originalItem == null) {
+            throw new IllegalArgumentException("Item not found");
+        } else {
+            originalItem.setQuantity(item.getQuantity());
+            return originalItem;
+        }
+    }
+
     public void removeItem(ItemKey key) {
         itemsMap.remove(key);
+    }
+
+    public void clear() {
+        itemsMap.clear();
     }
 
     public List<ShoppingCart.Item> removeAllItems(List<ItemKey> keys) {
@@ -114,4 +131,9 @@ public class ShoppingCart {
 
         return cart;
     }
+
+    @Version
+    @Column(nullable = false, columnDefinition = "BIGINT DEFAULT 0")
+    @Getter
+    public long version;
 }

@@ -1,0 +1,15 @@
+
+<h1 class="cart-title">{{ 'cart-title' | translate }}</h1>
+<div class="upper-cart-container">
+  <div class="cart-container">
+    @if (items.length === 0) {
+    <p>{{ 'cart-empty' | translate }}</p>
+    }
+
+    @for (item of items; track $index) {
+    <app-cart-item [item]="item">[pricing]="item.pricing">
+    </app-cart-item>
+    }
+  </div>
+  <app-checkout-form></app-checkout-form>
+</div>

@@ -3,11 +3,13 @@ package xyz.jiniux.aap.domain.cart;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import xyz.jiniux.aap.domain.cart.exceptions.ItemNotFoundInCartException;
 import xyz.jiniux.aap.domain.cart.exceptions.StocksQuantityNotAvailableException;
 import xyz.jiniux.aap.domain.model.ShoppingCart;
 import xyz.jiniux.aap.domain.model.StockFormat;
@@ -18,6 +20,7 @@ import xyz.jiniux.aap.infrastructure.persistency.ShoppingCartRepository;
 import java.math.BigDecimal;
 import java.util.*;
 
+@Slf4j
 @Service
 public class ShoppingCartService {
     private final WarehouseService warehouseService;
@@ -83,7 +86,7 @@ public class ShoppingCartService {
 
             boolean priceChanged = item.getPriceEur() != null && !priceEur.equals(item.getPriceEur());
             if (priceChanged) {
-                results.add(new PriceChangedShoppingCartItem(item.getIsbn(), item.getStockFormat(), item.getStockQuality(), priceEur));
+                results.add(new PriceChangedShoppingCartItem(item.getIsbn(), item.getStockFormat(), item.getStockQuality(), item.getPriceEur(), priceEur));
             }
 
             item.setPriceEur(priceEur);
@@ -95,8 +98,7 @@ public class ShoppingCartService {
     @Transactional(rollbackFor = Exception.class)
     @Retryable(retryFor = DataIntegrityViolationException.class)
     public ShoppingCartSyncResult pushShoppingCartUpdate(@NonNull String username, @NonNull ShoppingCartUpdate update)
-            throws StocksQuantityNotAvailableException
-    {
+            throws StocksQuantityNotAvailableException, ItemNotFoundInCartException {
         Optional<ShoppingCart> cartOptional = shoppingCartRepository.findCartByUsername(username);
         ShoppingCart shoppingCart;
 
@@ -114,6 +116,10 @@ public class ShoppingCartService {
             }
             case ShoppingCartUpdate.RemoveItem removeItem -> {
                 shoppingCart.removeItem(removeItem.toItemKey());
+            }
+            case ShoppingCartUpdate.UpdateItem updateItem -> {
+                ShoppingCart.Item updatedItem = shoppingCart.updateItem(updateItem.toItem());
+                enforceStockAvailability(updatedItem);
             }
             default -> throw new IllegalStateException("Unexpected value: " + update);
         }
@@ -148,6 +154,25 @@ public class ShoppingCartService {
         }
 
         return Collections.emptyList();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public boolean clearShoppingCart(@NonNull String username, @NonNull List<ShoppingCart.Item> items, long lastVersion) {
+        ShoppingCart shoppingCart = shoppingCartRepository.findCartByUsernameForUpdate(username).orElse(null);
+
+        if (shoppingCart == null) {
+            return true;
+        }
+
+        if (shoppingCart.getVersion() != lastVersion) {
+            return false;
+        }
+
+        shoppingCart.clear();
+
+        shoppingCartRepository.save(shoppingCart);
+
+        return true;
     }
 
     @Transactional(rollbackFor = Exception.class)

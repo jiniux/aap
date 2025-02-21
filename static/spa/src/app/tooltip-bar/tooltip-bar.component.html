@@ -1,0 +1,27 @@
+<div class="tooltip-bar">
+    @if (loggedIn) {
+    <div class="shopping-cart" (click)="openCart()">
+        <fa-icon [icon]="'shopping-cart'"></fa-icon>
+    </div>
+    <div class="orders">
+        <fa-icon [icon]="'truck-fast'"></fa-icon>
+    </div>
+    }
+    <div class="user" (click)="userClickedUserSection()">
+        <fa-icon [icon]="'user'"></fa-icon>
+        @if (loggedIn) {
+            {{ 'hello' | translate }}, {{ userFirstName }}!
+        } @else {
+            {{ 'login' | translate }}
+        }
+
+        @if (showLogoutMenu) {
+            <div class="logout-menu">
+                <button (click)="logout()">
+                  {{ 'logout' | translate }}
+                  <fa-icon [icon]="'sign-out-alt'"></fa-icon>
+                </button>
+            </div>
+        }
+    </div>
+</div>

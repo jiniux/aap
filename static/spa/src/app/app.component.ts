@@ -1,5 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CartService } from './cart.service';
+import { Router } from '@angular/router';
+import { CartToastNotifierService } from './cart-toast-notifier.service';
+import { AuthService } from '@auth0/auth0-angular';
 
 @Component({
   selector: 'app-root',
@@ -8,10 +11,24 @@ import { CartService } from './cart.service';
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
-  constructor(private readonly cartService: CartService) {}
+  constructor(
+    private readonly cartService: CartService, 
+    private readonly cartToastNotifierService: CartToastNotifierService,
+    private readonly router: Router,
+    private readonly authService: AuthService
+  ) {}
   
   ngOnInit(): void {
-    this.cartService.reloadCart();
+    this.authService.isAuthenticated$.subscribe((isAuthenticated) => {
+      if (isAuthenticated) {
+        this.cartToastNotifierService.start();
+        this.cartService.reloadCart();
+      }
+    })
+  }
+
+  navigateToHome() {
+    this.router.navigate(['/']);
   }
 
   title = 'aap';

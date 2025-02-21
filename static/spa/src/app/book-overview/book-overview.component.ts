@@ -9,6 +9,7 @@ import { emojiFromStockQuality, EmojiNameWithColor } from '../../utils/emoji-fro
 import * as _ from "lodash"
 import { ToastService } from '../toast.service';
 import { CartService } from '../cart.service';
+import { AuthService } from '@auth0/auth0-angular';
 
 type BookLoadStateResult = {
   title: string;
@@ -16,6 +17,8 @@ type BookLoadStateResult = {
   authors: string;
   publisher: string;
   edition: string;
+  description: string;
+  publicationYear: number;
   stocks: {
     format: t.TypeOf<typeof StockFormat>;
     quality: t.TypeOf<typeof StockQuality>;
@@ -41,6 +44,8 @@ function mapFullCatalogBookResult(result: FullCatalogBookResult): BookLoadStateR
     authors: result.authors.map((a) => `${a.firstName} ${a.lastName}`).join(", "),
     publisher: result.publisher.name,
     edition: result.edition,
+    description: result.description,
+    publicationYear: result.publicationYear,
     stocks: result.stocks.map((s) => ({
       format: s.format,
       quality: s.quality,
@@ -66,30 +71,32 @@ export class BookOverviewComponent {
 
   public stockFormats: t.TypeOf<typeof StockFormat>[] = []
   public stockQualitiesForSelectedFormat: { [format in t.TypeOf<typeof StockFormat>]: [t.TypeOf<typeof StockQuality>, string, EmojiNameWithColor][] } = {
-    "ebook": [],
     "hardcover": [],
     "paperback": [],
   }
 
   public topQualityPrices: string[] = []
-  public selectedStockFormat: t.TypeOf<typeof StockFormat> = "ebook"
+  public selectedStockFormat: t.TypeOf<typeof StockFormat> = "hardcover"
   public selectedStockQualityIndex: number = 0
 
   private isbn: string = ""
 
   private loadBookSubscription: Subscription | null = null
+  private authSubscription: Subscription | null = null
 
   constructor(
     private readonly catalogService: CatalogService, 
     private readonly route: ActivatedRoute,
     private readonly toastService: ToastService,
-    private readonly cartService: CartService
+    private readonly cartService: CartService,
+    private readonly authService: AuthService
   ) { }
 
+  public loggedIn = false
+  
   updateSelectedStockQualities() {
     if (this.state.loading === false) {
       this.stockQualitiesForSelectedFormat = {
-        "ebook": [],
         "hardcover": [],
         "paperback": []
       }
@@ -145,6 +152,10 @@ export class BookOverviewComponent {
   public itemBeingAdded : boolean = false;
 
   public addBookToCart() {
+    if (!this.loggedIn) {
+      return
+    }
+
     if (this.itemBeingAdded) {
       return
     }
@@ -201,12 +212,17 @@ export class BookOverviewComponent {
 
   ngOnDestroy() {
     this.loadBookSubscription?.unsubscribe()
+    this.authSubscription?.unsubscribe()
   }
 
   ngOnInit() {
     this.route.paramMap.subscribe((params) => {
       this.isbn = params.get("id")!
       this.loadBook()
+    })
+
+    this.authSubscription = this.authService.isAuthenticated$.subscribe((isAuthenticated) => {
+      this.loggedIn = isAuthenticated
     })
   }
 }

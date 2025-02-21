@@ -6,5 +6,6 @@ import java.util.List;
 public record SyncShoppingCartResult(
     List<SyncShoppingCartResultItem> items,
     List<SyncShoppingCartResultRemovedItem> removedItems,
-    List<SyncShoppingCartResultPriceChangedItem> priceChangedItems
+    List<SyncShoppingCartResultPriceChangedItem> priceChangedItems,
+    long version
 ) implements Serializable {}

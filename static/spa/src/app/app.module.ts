@@ -6,7 +6,6 @@ import { AppComponent } from './app.component';
 import { TranslateLoader, TranslateModule, TranslateService } from "@ngx-translate/core"
 import { HttpClient, provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
 import {TranslateHttpLoader} from '@ngx-translate/http-loader';
-import { LandingComponent } from './landing/landing.component';
 import { FaIconLibrary, FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { far } from '@fortawesome/free-regular-svg-icons';
@@ -19,6 +18,11 @@ import { ToastComponent } from './toast/toast.component';
 import { ToastListComponent } from './toast-list/toast-list.component';
 import { AuthButtonComponent } from './auth-button.component';
 import { AuthHttpInterceptor, authHttpInterceptorFn, AuthModule, provideAuth0 } from '@auth0/auth0-angular';
+import { TooltipBarComponent } from './tooltip-bar/tooltip-bar.component';
+import { OrdersComponent } from './orders/orders.component';
+import { CartComponent } from './cart/cart.component';
+import { CartItemComponent } from './cart-item/cart-item.component';
+import { CheckoutFormComponent } from './checkout-form/checkout-form.component';
 
 // AoT requires an exported function for factories
 export function HttpLoaderFactory(http: HttpClient) {
@@ -28,7 +32,6 @@ export function HttpLoaderFactory(http: HttpClient) {
 @NgModule({
   declarations: [
     AppComponent,
-    LandingComponent,
     LandingSearchResultComponent,
     BookOverviewComponent,
     BookSearchComponent,
@@ -36,20 +39,28 @@ export function HttpLoaderFactory(http: HttpClient) {
     ToastComponent,
     ToastListComponent,
     AuthButtonComponent,
+    TooltipBarComponent,
+    OrdersComponent,
+    CartComponent,
+    CartItemComponent,
+    CheckoutFormComponent,
   ],
   imports: [
     AuthModule.forRoot({
       domain: 'aap-demo.eu.auth0.com',
       clientId: '6YiRY96DuOjglFqapEZlETHCP4YQBhxj',
       authorizationParams: {
-        scope: 'openid profile email sync:shopping-cart',
+        scope: 'openid profile email sync:shopping-cart place:order view:orders',
         audience: 'http://localhost:4200/api',
         redirect_uri: window.location.origin
       },
       httpInterceptor: {
         allowedList: [
           {
-            uri: '/api/*'
+            uri: '/api/shopping-cart/*',
+          },
+          {
+            uri: '/api/order/*',
           }
         ]
       },

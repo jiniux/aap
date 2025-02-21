@@ -6,3 +6,45 @@
     box-sizing: border-box;
     flex-direction: column;
 }
+
+:host {
+    display: flex;  
+    flex: 1;      
+    text-align: center;
+    box-sizing: border-box;
+    flex-direction: column;
+}
+
+.header-container {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;  /* Vertically center items */
+    padding: 0 1rem;      /* Optional horizontal padding */
+}
+
+.header-title {
+  grid-column: 2;       /* Place brand in the center column */
+  justify-self: center; /* Center the brand horizontally within that column */
+}
+
+.logo-name {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.slogan {
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+    cursor: pointer;
+}
+
+.header-tooltip {
+    grid-column: 3;       /* Place brand in the center column */
+    justify-self: end; /* Center the brand horizontally within that column */
+}

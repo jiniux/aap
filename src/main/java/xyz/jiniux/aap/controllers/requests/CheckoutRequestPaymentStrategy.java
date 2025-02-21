@@ -26,7 +26,8 @@ public sealed interface CheckoutRequestPaymentStrategy {
         @Max(12)
         int validMonth,
 
-        @Min(2000)
+        @Min(1)
+        @Max(99)
         int validYear,
 
         @Pattern(regexp = "[a-zA-Z0-9. ]+")

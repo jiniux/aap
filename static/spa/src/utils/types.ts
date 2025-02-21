@@ -13,7 +13,6 @@ export const StockQuality = t.keyof({
 export const StockFormat = t.keyof({
     "hardcover": null,
     "paperback": null,
-    "ebook": null
 });
 
 export const PriceEur = new t.Type<Big, string, unknown>("PriceEur",

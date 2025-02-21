@@ -1,0 +1,64 @@
+<div class="cart-item">
+    <div class="card" > 
+
+        <div class="cover" style="background-image: url('/api/{{ item.coverUrl }}');" (click)="openOverview()">
+            <div class="backdrop">
+                <div class="img" style="background-image: url('/api{{ item.coverUrl }}');"></div>
+            </div>
+        </div>
+
+        <div class="card-content" >
+            <h2>{{ item.title }}</h2>
+            <p>{{ item.authorNames }}</p>
+
+            <div class="details">
+                <div class="price">
+                    <fa-icon [icon]="'tag'"></fa-icon>
+                    <span>{{item.pricing}}</span>
+                </div>
+                <div class="format">
+                    <fa-icon [icon]="'book'"></fa-icon>
+                    <span>{{ "stock-format." + item.stockFormat | translate }}</span>
+                </div>
+            </div>
+
+            <div class="status">
+                <fa-icon [icon]="'smile'"></fa-icon>
+                <span>{{ "stock-quality." + item.stockQuality |  translate }}</span>
+            </div>
+            
+            <div class="quantity-control">
+                <div *ngIf="!isEditing" class="quantity-display" (click)="startEditing()">
+                    <fa-icon [icon]="'shopping-cart'"></fa-icon>
+                    <span>{{ item.quantity }}</span>
+                </div>
+                <div *ngIf="isEditing" class="quantity-edit">
+                    <input type="number" [min]="1" [value]="tempQuantity"
+                           (input)="tempQuantity = $any($event.target).value" />
+                    <button (click)="confirmEdit()">
+                        <fa-icon style="color: white;" [icon]="'check'"></fa-icon>
+                    </button>
+                    <button (click)="cancelEdit()">
+                        <fa-icon style="color: white;" [icon]="'times'"></fa-icon>
+                    </button>
+                </div>
+                <ng-container *ngIf="!showRemoveConfirmation">
+                    <button class="remove-btn" (click)="removeItem()">
+                        <fa-icon style="color: white;" [icon]="'trash'"></fa-icon>
+                    </button>
+                </ng-container>
+                <ng-container *ngIf="showRemoveConfirmation">
+                    <div class="remove-confirmation">
+                        <span>Are you sure?</span>
+                        <button id="confirm" (click)="confirmRemoval()">
+                            <fa-icon style="color: white;" [icon]="'check'"></fa-icon>
+                        </button>
+                        <button id="cancel" (click)="cancelRemoval()">
+                            <fa-icon style="color: white;" [icon]="'times'"></fa-icon>
+                        </button>
+                    </div>
+                </ng-container>
+            </div>
+        </div>
+    </div>
+</div>

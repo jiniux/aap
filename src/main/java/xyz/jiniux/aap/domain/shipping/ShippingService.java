@@ -6,11 +6,13 @@ import jakarta.persistence.OptimisticLockException;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import xyz.jiniux.aap.domain.model.Address;
 import xyz.jiniux.aap.domain.model.Order;
 import xyz.jiniux.aap.domain.model.ShipmentTracking;
 import xyz.jiniux.aap.domain.model.ShipmentTrackingProgression;
 import xyz.jiniux.aap.domain.shipping.exceptions.ShipmentTrackingAlreadyAddedToOrderException;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
@@ -38,6 +40,14 @@ public class ShippingService {
         order.setShipmentTracking(shipmentTracking);
 
         entityManager.persist(order);
+    }
+
+    public BigDecimal calculateShipmentCosts(Address address) {
+        if (address.country().equals("IT")) {
+            return new BigDecimal("2.50");
+        } else {
+            return new BigDecimal("5.00");
+        }
     }
 
     @Transactional

@@ -7,17 +7,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.jiniux.aap.domain.billing.PaymentStrategy;
 import xyz.jiniux.aap.domain.catalog.exceptions.BookNotFoundException;
-import xyz.jiniux.aap.domain.model.Address;
+import xyz.jiniux.aap.domain.model.*;
 import xyz.jiniux.aap.domain.order.events.OrderPlacedEvent;
 import xyz.jiniux.aap.domain.order.exceptions.ItemsPriceChangedWhilePlacingOrderException;
-import xyz.jiniux.aap.domain.model.Order;
-import xyz.jiniux.aap.domain.model.ShoppingCart;
 import xyz.jiniux.aap.domain.order.exceptions.OrderAlreadyConfirmedException;
 import xyz.jiniux.aap.domain.order.exceptions.OrderNotFoundException;
+import xyz.jiniux.aap.domain.order.exceptions.ShipmentCostChangedException;
+import xyz.jiniux.aap.domain.shipping.ShippingService;
 import xyz.jiniux.aap.domain.warehouse.WarehouseService;
 import xyz.jiniux.aap.domain.warehouse.exceptions.NotEnoughItemsInStockException;
 import xyz.jiniux.aap.domain.warehouse.exceptions.StockNotOnSaleException;
 import xyz.jiniux.aap.infrastructure.persistency.OrderRepository;
+import xyz.jiniux.aap.infrastructure.persistency.ShoppingCartRepository;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -31,30 +32,26 @@ public class OrderService {
     private final WarehouseService warehouseService;
     private final OrderRepository orderRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final ShippingService shippingService;
+    private final ShoppingCartRepository shoppingCartRepository;
 
-    public OrderService(WarehouseService warehouseService, OrderRepository orderRepository, ApplicationEventPublisher applicationEventPublisher, EntityManager entityManager) {
+    public OrderService(WarehouseService warehouseService, OrderRepository orderRepository, ApplicationEventPublisher applicationEventPublisher, EntityManager entityManager, ShippingService shippingService, ShoppingCartRepository shoppingCartRepository) {
         this.warehouseService = warehouseService;
         this.orderRepository = orderRepository;
         this.applicationEventPublisher = applicationEventPublisher;
         this.entityManager = entityManager;
+        this.shippingService = shippingService;
+        this.shoppingCartRepository = shoppingCartRepository;
     }
 
-    public void ensurePriceNotChanged(List<ShoppingCart.Item> shoppingCartItems) throws ItemsPriceChangedWhilePlacingOrderException {
-        List<BigDecimal> pricesEur = warehouseService.getStockPricesEur(
-                shoppingCartItems.stream().map(i -> new WarehouseService.GetStockPriceQuery(i.getIsbn(), i.getStockFormat(), i.getStockQuality())).toList());
-
-        assert shoppingCartItems.size() == pricesEur.size();
-
-        Iterator<BigDecimal> pricesIterator = pricesEur.iterator();
-        Iterator<ShoppingCart.Item> itemsIterator = shoppingCartItems.iterator();
-
+    public void ensurePriceNotChanged(List<ShoppingCart.Item> shoppingCartItems, Map<String, List<Stock>> stocksByIsbn) throws ItemsPriceChangedWhilePlacingOrderException, StockNotOnSaleException {
         List<ItemsPriceChangedWhilePlacingOrderException.Info> info = new ArrayList<>();
-        while (pricesIterator.hasNext()) {
-            BigDecimal priceEur = pricesIterator.next();
-            ShoppingCart.Item item = itemsIterator.next();
 
-            if (!priceEur.equals(item.getPriceEur())) {
-                info.add(new ItemsPriceChangedWhilePlacingOrderException.Info(item.getIsbn(), item.getStockFormat(), item.getStockQuality(), item.getPriceEur(), priceEur));
+        for (ShoppingCart.Item item : shoppingCartItems) {
+            Stock stock = getStock(stocksByIsbn, item.getIsbn(), item.getStockFormat(), item.getStockQuality());
+
+            if (!stock.getPriceEur().equals(item.getPriceEur())) {
+                info.add(new ItemsPriceChangedWhilePlacingOrderException.Info(item.getIsbn(), item.getStockFormat(), item.getStockQuality(), item.getPriceEur(), stock.getPriceEur()));
             }
         }
 
@@ -82,17 +79,45 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public void placeOrderFromShoppingCartItems(String username, List<ShoppingCart.Item> shoppingCartItems, PaymentStrategy paymentStrategy, Address address)
-            throws NotEnoughItemsInStockException, BookNotFoundException, StockNotOnSaleException, ItemsPriceChangedWhilePlacingOrderException
-    {
-        ensurePriceNotChanged(shoppingCartItems);
+    private static Stock getStock(Map<String, List<Stock>> stocks, String isbn, StockFormat stockFormat, StockQuality stockQuality) throws StockNotOnSaleException {
+        return stocks.get(isbn).stream()
+                .filter(s -> s.getFormat().equals(stockFormat) && s.getQuality().equals(stockQuality))
+                .findFirst()
+                .orElseThrow(() -> new StockNotOnSaleException(isbn, stockFormat, stockQuality));
+    }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void placeOrderFromShoppingCartItems(
+            String username,
+            List<ShoppingCart.Item> shoppingCartItems,
+            PaymentStrategy paymentStrategy,
+            Address address,
+            BigDecimal shipmentCost
+    ) throws NotEnoughItemsInStockException,
+            BookNotFoundException,
+            StockNotOnSaleException,
+            ItemsPriceChangedWhilePlacingOrderException,
+            ShipmentCostChangedException
+    {
         BigDecimal finalPrice = BigDecimal.ZERO;
 
+        Set<String> isbns = shoppingCartItems.stream().map(ShoppingCart.Item::getIsbn).collect(Collectors.toSet());
+        Map<String, List<Stock>> stocks = warehouseService.bulkGetStocksByISBNsForUpdate(isbns.stream().toList());
+
+        ensurePriceNotChanged(shoppingCartItems, stocks);
+
         for (ShoppingCart.Item item : shoppingCartItems) {
-            this.warehouseService.reserveStock(item.getIsbn(), item.getStockFormat(), item.getStockQuality(), item.getQuantity());
+            Stock stock = getStock(stocks, item.getIsbn(), item.getStockFormat(), item.getStockQuality());
+
+            // No need to lock, it is already locked by bulkGetStocksByISBNsForUpdate
+            this.warehouseService.reserveStock(stock, item.getQuantity(), false);
+
             finalPrice = finalPrice.add(item.getPriceEur().multiply(BigDecimal.valueOf(item.getQuantity())));
+        }
+
+        BigDecimal realShipmentCost = shippingService.calculateShipmentCosts(address);
+        if (!shipmentCost.equals(realShipmentCost)) {
+            throw new ShipmentCostChangedException(realShipmentCost);
         }
 
         Order order = new Order();
@@ -106,6 +131,7 @@ public class OrderService {
 
         applicationEventPublisher.publishEvent(new OrderPlacedEvent(order.getId(), order.getPlacedAt(), order.getUsername(), order.getFinalPrice(), paymentStrategy));
     }
+
 
     private static Set<Order.Item> createOrderItems(List<ShoppingCart.Item> items) {
         return items.stream().map(Order.Item::fromShoppingCartItem).collect(Collectors.toSet());

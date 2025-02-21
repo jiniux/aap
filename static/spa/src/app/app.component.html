@@ -1,4 +1,20 @@
 
-<app-auth-button></app-auth-button>
+
+
 <app-toast-list></app-toast-list>
+
+<div class="header-container">
+<div class="header-title">
+<div class="logo-name" (click)="navigateToHome()">
+    <img src="/assets/logo.png" alt="{{ 'landing.logo-image-alt' | translate }}" width="40" height="40">
+    <span>Andando Al Punto</span>
+</div>
+<div class="slogan" (click)="navigateToHome()" translate>landing.slogan</div>
+</div>
+<div class="header-tooltip">
+    <app-tooltip-bar></app-tooltip-bar>
+</div>
+</div>
+
 <router-outlet></router-outlet>
+
