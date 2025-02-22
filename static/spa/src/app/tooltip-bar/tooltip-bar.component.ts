@@ -54,7 +54,7 @@ export class TooltipBarComponent implements OnInit {
 
     this.authService.user$.subscribe((user) => {
       if (user !== null && user !== undefined) {
-        this.userFirstName = user.given_name ?? 'unknown';
+        this.userFirstName = user.given_name ?? user.name ?? user.nickname ?? user.email ?? 'unknown';
       }
     });
   }

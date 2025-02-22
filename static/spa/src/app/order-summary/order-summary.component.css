@@ -2,11 +2,11 @@
     border: solid 2px rgb(134, 134, 134);
     border-radius: 8px;
     padding: 16px;
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: 0fr 1fr 1fr 1fr 0.5fr 0.5fr;
     gap: 32px;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
 }
 
 .order-field {

@@ -1,9 +1,9 @@
 <div class="tooltip-bar">
     @if (loggedIn) {
-    <div class="shopping-cart" (click)="openCart()">
+    <div class="shopping-cart" (click)="openCart()" title="{{ 'shopping-cart' | translate }}">
         <fa-icon [icon]="'shopping-cart'"></fa-icon>
     </div>
-    <div class="orders" (click)="openOrders()">
+    <div class="orders" (click)="openOrders()" title="{{ 'orders' | translate }}">
         <fa-icon [icon]="'truck-fast'"></fa-icon>
     </div>
     }
@@ -16,7 +16,7 @@
         }
 
         @if (showLogoutMenu) {
-            <div class="logout-menu">
+            <div class="logout-menu" >
                 <button (click)="logout()">
                   {{ 'logout' | translate }}
                   <fa-icon [icon]="'sign-out-alt'"></fa-icon>

@@ -60,7 +60,7 @@ export class BookSearchComponent {
       if (state.loading) {
         this.setLoading();
       } else {
-        this.setResults(state.results);
+        this.setResults(state.results.sort((a, b) => a.isbn.localeCompare(b.isbn)));
       }
     });
 

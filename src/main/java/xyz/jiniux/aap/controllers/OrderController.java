@@ -81,7 +81,6 @@ public class OrderController {
 
         try {
             orderService.placeOrderFromShoppingCartItems(principal.getName(), items, paymentStrategy, address, requestItems.shipmentCost());
-
             boolean cleared = shoppingCartService.clearShoppingCart(principal.getName(), items, requestItems.cartVersion());
 
             return ResponseEntity.ok(new CheckoutResult(cleared));

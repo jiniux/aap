@@ -105,6 +105,10 @@ public class OrderService {
             ItemsPriceChangedWhilePlacingOrderException,
             ShipmentCostChangedException
     {
+        if (shoppingCartItems.isEmpty()) {
+            return;
+        }
+
         BigDecimal finalPrice = BigDecimal.ZERO;
 
         Set<String> isbns = shoppingCartItems.stream().map(ShoppingCart.Item::getIsbn).collect(Collectors.toSet());

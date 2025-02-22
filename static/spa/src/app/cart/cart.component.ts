@@ -69,7 +69,7 @@ export class CartComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (books) => {
         this.items = books.map(({ item, book }) => ({
-          authorNames: book.authors.map(a => `${a.firstName} ${a.lastName}`).join(", "),
+          authorNames: book.authors.map(a => `${a.firstName} ${a.lastName}`).sort().join(", "),
           coverUrl: getSuitableFormatPreviewImageFromFormat(item.stockFormat, book.formatPreviewImages) ?? "",
           isbn: item.isbn,
           pricing: "€" + item.priceEur.toFixed(2),

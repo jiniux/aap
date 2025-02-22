@@ -114,7 +114,11 @@ export class BookOverviewComponent {
         this.stockQualitiesForSelectedFormat[qualityKey as t.TypeOf<typeof StockFormat>].sort((a, b) => cmpQualityByPriority(a[0], b[0]))
       })
 
-      this.currentCoverUrl = getSuitableFormatPreviewImageFromFormat(this.selectedStockFormat, this.state.result.preview)
+      if (this.stockFormats.length > 0) {
+        this.currentCoverUrl = getSuitableFormatPreviewImageFromFormat(this.selectedStockFormat, this.state.result.preview)
+      } else {
+        this.currentCoverUrl = getSuitableFormatPreviewImageFromFormat(null, this.state.result.preview)
+      }
     }
   }
 
@@ -197,7 +201,6 @@ export class BookOverviewComponent {
       this.state = state;
 
       if (this.state.loading === false) {
-        
         this.stockFormats = _.uniq(this.state.result.stocks.map((s) => s.format))
         this.stockFormats.sort(cmpFormatByPriority)
         this.selectedStockFormat = this.stockFormats[0]

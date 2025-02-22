@@ -37,7 +37,7 @@ public class CatalogController {
     }
 
     @PostMapping(value = "/books")
-    @PreAuthorize("hasRole('manage:books')")
+    @PreAuthorize("hasAuthority('manage:books')")
     public ResponseEntity<?> registerBook(@RequestBody @Valid BookRegistrationRequest request)
     {
         try {
@@ -148,7 +148,7 @@ public class CatalogController {
     }
 
     @DeleteMapping(value = "/books/{isbn}")
-    @PreAuthorize("hasAuthority('manage:authors')")
+    @PreAuthorize("hasAuthority('manage:books')")
     public ResponseEntity<?> removeBook(
         @PathVariable(name = "isbn") @NotNull @ISBN String isbn
     ) {
@@ -192,7 +192,7 @@ public class CatalogController {
     }
 
     @DeleteMapping(value = "/authors/{authorId}")
-    @PreAuthorize("hasRole('manage:books')")
+    @PreAuthorize("hasAuthority('manage:authors')")
     public ResponseEntity<?> removeAuthor(
         @PathVariable("authorId") @NotNull @ValidAuthorId String authorId
     ) {
@@ -212,7 +212,7 @@ public class CatalogController {
     }
 
     @PostMapping(value = "/publishers")
-    @PreAuthorize("hasRole('manage:books')")
+    @PreAuthorize("hasAuthority('manage:publishers')")
     public ResponseEntity<Void> registerPublisher(
         @RequestBody @Valid PublisherRegistrationRequest request
     ) {
@@ -223,7 +223,7 @@ public class CatalogController {
     }
 
     @PatchMapping(value = "/publishers/{publisherId}")
-    @PreAuthorize("hasRole('manage:books')")
+    @PreAuthorize("hasAuthority('manage:publishers')")
     public ResponseEntity<?> editPublisher(
         @PathVariable("publisherId") @NotNull @ValidPublisherId String publisherId,
         @RequestBody @Valid EditPublisherRequest request
@@ -241,7 +241,7 @@ public class CatalogController {
     }
 
     @DeleteMapping(value = "/publishers/{publisherId}")
-    @PreAuthorize("hasRole('manage:books')")
+    @PreAuthorize("hasAuthority('manage:publishers')")
     public ResponseEntity<?> removePublisher(
         @PathVariable("publisherId") @NotNull @ValidPublisherId String publisherId
     ) {
@@ -323,7 +323,7 @@ public class CatalogController {
 
 
     @PostMapping(value = "/book-format-preview-images/upload")
-    @PreAuthorize("hasRole('manage:books')")
+    @PreAuthorize("hasAuthority('manage:books')")
     public ResponseEntity<?> uploadBookFormatPreviewImage(
         @RequestPart(name = "isbn") @NotNull @ISBN(type = ISBN.Type.ISBN_13) String isbn,
         @RequestPart(name = "format") @ValidStockFormat String format,
