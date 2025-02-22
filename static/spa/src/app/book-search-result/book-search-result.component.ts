@@ -4,6 +4,7 @@ import Big from 'big.js';
 import { Router } from '@angular/router';
 import { cmpFormatByPriority, cmpQualityByPriority } from '../../utils/stock-priorities';
 import { emojiFromStockQuality } from '../../utils/emoji-from-stock-quality';
+import { getSuitableFormatPreviewImageFromFormat } from '../../utils/most-suitable-preview-image';
 
 type Stock = BookSearchResults[0]['stocks'][0]
 type FormatPreviewImage = BookSearchResults[0]['formatPreviewImages'][0]
@@ -80,7 +81,7 @@ export class LandingSearchResultComponent implements OnInit {
     this.summary = {
       authorNames: this.authors.map(author => `${author.firstName} ${author.lastName}`).join(", "),
       publisherName: this.publisher.name,
-      coverUrl: this.formatPreviewImages[0]?.url !== null ? "/api" + this.formatPreviewImages[0].url : '',
+      coverUrl: getSuitableFormatPreviewImageFromFormat(this.stocks[0]?.format ?? null, this.formatPreviewImages),
       supply: { available: false }
     }
 
@@ -88,6 +89,7 @@ export class LandingSearchResultComponent implements OnInit {
       const bestStock = computeBestStock(this.stocks)
       const formats = this.stocks.map(s => s.format)
       const qualities = this.stocks.map(s => s.quality)
+      this.summary.coverUrl = getSuitableFormatPreviewImageFromFormat(bestStock.format, this.formatPreviewImages)
       
       this.summary.supply = {
         available: true,

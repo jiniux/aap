@@ -10,6 +10,7 @@ import * as _ from "lodash"
 import { ToastService } from '../toast.service';
 import { CartService } from '../cart.service';
 import { AuthService } from '@auth0/auth0-angular';
+import { getSuitableFormatPreviewImageFromFormat } from '../../utils/most-suitable-preview-image';
 
 type BookLoadStateResult = {
   title: string;
@@ -52,7 +53,7 @@ function mapFullCatalogBookResult(result: FullCatalogBookResult): BookLoadStateR
       priceEur: s.priceEur.toFixed(2)
     })),
     preview: result.formatPreviewImages.map((p) => ({
-      url: "/api" + p.url,
+      url: p.url,
       format: p.format
     }))
   }
@@ -74,6 +75,8 @@ export class BookOverviewComponent {
     "hardcover": [],
     "paperback": [],
   }
+
+  public currentCoverUrl: string = getSuitableFormatPreviewImageFromFormat(null, [])
 
   public topQualityPrices: string[] = []
   public selectedStockFormat: t.TypeOf<typeof StockFormat> = "hardcover"
@@ -110,6 +113,8 @@ export class BookOverviewComponent {
       Object.keys(this.stockQualitiesForSelectedFormat).forEach((qualityKey) => {
         this.stockQualitiesForSelectedFormat[qualityKey as t.TypeOf<typeof StockFormat>].sort((a, b) => cmpQualityByPriority(a[0], b[0]))
       })
+
+      this.currentCoverUrl = getSuitableFormatPreviewImageFromFormat(this.selectedStockFormat, this.state.result.preview)
     }
   }
 
@@ -127,6 +132,11 @@ export class BookOverviewComponent {
   }
 
   private updateItemBeingAdded() {
+    if (this.stockQualitiesForSelectedFormat[this.selectedStockFormat]?.length === 0) {
+      this.itemBeingAdded = false
+      return
+    }
+
     this.itemBeingAdded = this.cartService.isItemBeingAdded({
       isbn: this.isbn,
       stockFormat: this.selectedStockFormat,

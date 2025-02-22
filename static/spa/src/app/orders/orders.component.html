@@ -1,6 +1,6 @@
 
 <h1 class="orders-title">
-    Riepilogo ordini
+    {{ 'orders-title' | translate }}
 </h1>
 <div class="orders-container">
     @for (order of orders; track $index) {

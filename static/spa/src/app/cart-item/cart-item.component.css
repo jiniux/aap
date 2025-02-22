@@ -39,6 +39,7 @@
 }
 
 .cart-item .cover {
+    background-size: cover;
     height: 300px;
     width: 100%;
 }

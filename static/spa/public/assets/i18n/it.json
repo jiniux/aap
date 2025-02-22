@@ -85,6 +85,7 @@
         "items": "Articoli",
         "total": "Totale"
     },
+    "loading": "Caricamento...",
     "order-states": {
         "processing-payment": "In elaborazione di pagamento",
         "payment-failed": "Pagamento fallito",
@@ -93,5 +94,40 @@
         "delivered": "Consegnato",
         "waiting-confirmation": "In attesa della conferma"
     },
-    "order-see-details": "Vedi dettagli"
+    "orders-title": "Riepilogo ordini",
+    "order-see-details": "Vedi dettagli",
+    "order-details-title": "Dettagli ordine",
+    "shipping-address": "Indirizzo di spedizione",
+    "payment-details": "Dettagli di pagamento",
+    "method": "Metodo",
+    "status": "Stato",
+    "order-items": "Articoli Ordinati",
+    "shipping-cost": "Costo di Spedizione",
+    "total-amount": "Importo Totale",
+    "order-details-labels": {
+        "order-id": "Identificativo ordine",
+        "date": "Data ricezione",
+        "status": "Stato",
+        "recipient": "Destinatario",
+        "address": "Indirizzo",
+        "city-state": "Città/stato",
+        "zip-code": "CAP",
+        "country": "Nazione",
+        "payment-method-label": "Metodo",
+        "payment-method": {
+            "credit-card": "Carta di credito"
+        },
+        "payment-status-label": "Stato pagamento",
+        "payment-status": {
+            "pending": "In attesa",
+            "completed": "Completato",
+            "errored-unknown": "Errore",
+            "errored-not-enough-funds": "Fondi insufficienti"
+        },
+        "credit-card": {
+            "number": "Numero carta",
+            "tenant": "Intestatario",
+            "expiration-date": "Data di scadenza"
+        }
+    }
 }

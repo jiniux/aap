@@ -2,10 +2,10 @@
     @if (!state.loading) {
     <div class="book-overview-container">
         <div class="card">
-            <div class="cover" style="background-image: url('{{ state.result.preview[selectedPreviewIndex].url }}');">
+            <div class="cover" style="background-image: url('{{ currentCoverUrl }}');">
                 <div class="backdrop">
                     <div class="img"
-                        style="background-image: url('{{ state.result.preview[selectedPreviewIndex].url }}');"></div>
+                        style="background-image: url('{{ currentCoverUrl }}');"></div>
                 </div>
             </div>
         </div>
