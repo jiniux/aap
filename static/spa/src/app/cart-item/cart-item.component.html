@@ -53,7 +53,7 @@
                 }
                 @if (showRemoveConfirmation) {
                     <div class="remove-confirmation">
-                        <span>Are you sure?</span>
+                        <span>{{ 'are-you-sure' | translate }}</span>
                         <button id="confirm" (click)="confirmRemoval()">
                             <fa-icon style="color: white;" [icon]="'check'"></fa-icon>
                         </button>
