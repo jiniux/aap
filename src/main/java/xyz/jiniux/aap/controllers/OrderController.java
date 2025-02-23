@@ -73,7 +73,7 @@ public class OrderController {
 
     @PostMapping(value = "/orders/action/place")
     @PreAuthorize("hasAuthority('place:order')")
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional
     public ResponseEntity<?> placeOrder(Principal principal, @RequestBody @Valid CheckoutRequest requestItems) {
         List<ShoppingCart.Item> items = CartItemMapper.MAPPER.fromCheckoutRequestItems(requestItems.items());
         PaymentStrategy paymentStrategy = requestItems.paymentStrategy().convert();

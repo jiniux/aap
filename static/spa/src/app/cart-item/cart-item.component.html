@@ -1,9 +1,9 @@
 <div class="cart-item">
     <div class="card" > 
 
-        <div class="cover" style="background-image: url('/api/{{ item.coverUrl }}');" (click)="openOverview()">
+        <div class="cover" style="background-image: url('{{ item.coverUrl }}');" (click)="openOverview()">
             <div class="backdrop">
-                <div class="img" style="background-image: url('/api{{ item.coverUrl }}');"></div>
+                <div class="img" style="background-image: url('{{ item.coverUrl }}');"></div>
             </div>
         </div>
 

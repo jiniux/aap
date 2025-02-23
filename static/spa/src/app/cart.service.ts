@@ -1,7 +1,7 @@
 import { Injectable, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { from, Observable, of, Subject } from 'rxjs';
-import { catchError, map, mergeMap } from 'rxjs/operators';
+import { catchError, map, mergeMap, startWith } from 'rxjs/operators';
 import * as t from 'io-ts';
 import { API_URL } from '../constants';
 import { ensureValid } from '../ext/io-ts.ext';
@@ -144,6 +144,12 @@ type CartEvent = {
   item: Readonly<PriceChangedCartItem[]>
 }
 
+const LocalStorageCart = t.type({
+  items: t.array(SyncShoppingCartResultItem),
+  removedItems: t.array(SyncShoppingCartResultRemovedItem),
+  priceChangedItems: t.array(SyncShoppingCartResultPriceChangedItem)
+});
+
 @Injectable({
   providedIn: 'root'
 })
@@ -160,24 +166,78 @@ export class CartService {
   private subject: Subject<CartEvent> = new Subject();
   private itemsUpdateSubject: Subject<CartItem[]> = new Subject();
 
+  private priceChangedItemsUpdateSubject: Subject<PriceChangedCartItem[]> = new Subject();
+  private removedItemsUpdateSubject: Subject<RemovedCartItem[]> = new Subject();
+
+  public get priceChangedItemsUpdate() { 
+    return this.priceChangedItemsUpdateSubject.pipe(startWith(this.priceChangedItems));
+  }
+  public get removedItemsUpdate() {
+     return this.removedItemsUpdateSubject.pipe(startWith(this.removedItems))
+  }
+
   public get events() { return this.subject.asObservable(); }
   public get itemsUpdate() { return this.itemsUpdateSubject.asObservable(); }
 
-  private priceChangedItems: { [key: string]: { oldPrice: Big.Big, newPrice: Big.Big } } = {}
-  private removedItems: Set<string> = new Set()
+  private _priceChangedItems: { [key: string]: { oldPrice: Big.Big, newPrice: Big.Big } } = {}
+  private _removedItems: Set<string> = new Set()
+
+  public get priceChangedItems() {
+    return Object.keys(this._priceChangedItems).map(key => {
+      const [isbn, stockFormat, stockQuality] = key.split(',')
+      return {
+        isbn,
+        stockFormat: stockFormat as t.TypeOf<typeof StockFormat>,
+        stockQuality: stockQuality as t.TypeOf<typeof StockQuality>,
+        oldPriceEur: this._priceChangedItems[key].oldPrice,
+        newPriceEur: this._priceChangedItems[key].newPrice
+      }
+    })
+  }
+
+  public get removedItems() {
+    return [...this._removedItems].map(key => {
+      const [isbn, stockFormat, stockQuality] = key.split(',')
+      return {
+        isbn,
+        stockFormat: stockFormat as t.TypeOf<typeof StockFormat>,
+        stockQuality: stockQuality as t.TypeOf<typeof StockQuality>
+      }
+    })
+  }
 
   private mutex = new m.Mutex()
   private itemsBeingAdded: Set<string> = new Set()
 
   private loadCartFromLocalStorage() {
-    const items = localStorage.getItem(LOCAL_STORAGE_CART_ITEMS_KEY);
-    if (items !== null) {
-      this.items = JSON.parse(items);
+    const json = localStorage.getItem(LOCAL_STORAGE_CART_ITEMS_KEY);
+    const { items, removedItems, priceChangedItems } = ensureValid(LocalStorageCart.decode(JSON.parse(json ?? '{}')));
+    if (items !== null || items !== undefined) {
+      this.processNewItems(items);
+    }
+    if (removedItems !== null || removedItems !== undefined) {
+      this.processRemovedItems(removedItems);
+    }
+    if (priceChangedItems !== null || priceChangedItems !== undefined) {
+      this.processPriceChangedItems(priceChangedItems);
     }
   }
 
+  public clearPriceChangedItems() {
+    this._priceChangedItems = {}
+    this.saveCartToLocalStorage()
+    this.priceChangedItemsUpdateSubject.next(this.priceChangedItems)
+  }
+
+  public clearRemovedItems() {
+    this._removedItems.clear()
+    this.saveCartToLocalStorage()
+    this.removedItemsUpdateSubject.next(this.removedItems)
+  }
+
   private saveCartToLocalStorage() {
-    localStorage.setItem(LOCAL_STORAGE_CART_ITEMS_KEY, JSON.stringify(this.items));
+    const cart = LocalStorageCart.encode({ items: this.items, removedItems: this.removedItems, priceChangedItems: this.priceChangedItems })
+    localStorage.setItem(LOCAL_STORAGE_CART_ITEMS_KEY, JSON.stringify(cart));
   }
 
   public isItemBeingAdded(itemKey: CartItemKey): boolean {
@@ -338,33 +398,48 @@ export class CartService {
     )
   }
 
+  private removeNotExistingPriceChangedItems() {
+    const existingItems = new Set(this.items.map(item => join([item.isbn, item.stockFormat, item.stockQuality], ',')))
+
+    for (const key in this._priceChangedItems) {
+      if (!existingItems.has(key)) {
+        delete this._priceChangedItems[key]
+      }
+    }
+
+    this.priceChangedItemsUpdateSubject.next(this.priceChangedItems)
+  }
+
   private processNewItems(newItems: SyncShoppingCartResultItem[]) {
     this.subject.next({ type: 'items-added', item: newItems });
     this.itemsUpdateSubject.next(newItems);
     this.items = newItems
+    this.removeNotExistingPriceChangedItems()
   }
 
   private processRemovedItems(removedItems: SyncShoppingCartResultRemovedItem[]) {
     if (removedItems.length > 0) {
+      this.removedItemsUpdateSubject.next(removedItems);
       this.subject.next({ type: 'items-removed', item: removedItems });
     }
 
     removedItems.forEach(removedItem => {
-      this.removedItems.add(removedItem.isbn);
+      this._removedItems.add(join([removedItem.isbn, removedItem.stockFormat, removedItem.stockQuality], ','))
     })
   }
 
   private processPriceChangedItems(priceChangedItems: SyncShoppingCartResultPriceChangedItem[]) {
     if (priceChangedItems.length > 0) {
       this.subject.next({ type: 'items-price-changed', item: priceChangedItems });
+      this.priceChangedItemsUpdateSubject.next(priceChangedItems)
     }
 
     priceChangedItems.forEach(priceChangedItem => {
       const key = join([priceChangedItem.isbn, priceChangedItem.stockFormat, priceChangedItem.stockQuality], ',')
-      const mappedPriceChangedItem = this.priceChangedItems[key]
+      const mappedPriceChangedItem = this._priceChangedItems[key]
 
       if (mappedPriceChangedItem === undefined) {
-        this.priceChangedItems[key] = { oldPrice: priceChangedItem.oldPriceEur, newPrice: priceChangedItem.newPriceEur }
+        this._priceChangedItems[key] = { oldPrice: priceChangedItem.oldPriceEur, newPrice: priceChangedItem.newPriceEur }
       } else {
         mappedPriceChangedItem.newPrice = priceChangedItem.newPriceEur
       }

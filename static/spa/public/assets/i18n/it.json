@@ -129,5 +129,10 @@
             "tenant": "Intestatario",
             "expiration-date": "Data di scadenza"
         }
-    }
+    },
+    "price-changed-notice": "Il prezzo dei seguenti articoli è cambiato:",
+    "price-changed-notice-item": "Il prezzo di <strong>{{title}}</strong> di <strong>{{authors}}</strong> (qualità: <strong>{{quality}}</strong>, formato: <strong>{{format}}</strong>) è cambiato da <strong>€{{oldPrice}}</strong> a <strong>€{{newPrice}}</strong>",
+    "cart-notice-dismiss-button-label": "Chiudi",
+    "remove-items-notice": "I seguenti articoli non sono più disponibili nelle quantità richieste:",
+    "remove-items-notice-item": "<strong>{{title}}</strong> di <strong>{{authors}}</strong> (qualità: <strong>{{quality}}</strong>, formato: <strong>{{format}}</strong>)"
 }

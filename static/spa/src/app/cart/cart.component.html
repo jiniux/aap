@@ -1,4 +1,3 @@
-
 <h1 class="cart-title">{{ 'cart-title' | translate }}</h1>
 <div class="upper-cart-container">
   <div class="cart-container">
@@ -11,5 +10,35 @@
     </app-cart-item>
     }
   </div>
-  <app-checkout-form></app-checkout-form>
+  <div class="left-container">
+    @if (priceChangedNoticeItems.length > 0) {
+    <div class="cart-notice">
+      <span>{{ 'price-changed-notice' | translate }}</span>
+      <ul>
+        @for (item of priceChangedNoticeItems; track $index) {
+        <li [innerHTML]="'price-changed-notice-item' | translate:item"></li>
+        }
+      </ul>
+      <div class="cart-notice-dismiss">
+        <div class="cart-notice-dismiss-button" (click)="clearPriceChangedNotice()">{{ 'cart-notice-dismiss-button-label' | translate }}</div>
+      </div>
+    </div>
+    }
+
+    @if (itemsRemovedNoticeItems.length > 0) {
+      <div class="cart-notice">
+        <span>{{ 'remove-items-notice' | translate }}</span>
+        <ul>
+          @for (item of itemsRemovedNoticeItems; track $index) {
+          <li [innerHTML]="'remove-items-notice-item' | translate:item"></li>
+          }
+        </ul>
+        <div class="cart-notice-dismiss">
+          <div class="cart-notice-dismiss-button" (click)="clearRemovedItemsNotice()">{{ 'cart-notice-dismiss-button-label' | translate }}</div>
+        </div>
+      </div>
+      }
+
+    <app-checkout-form></app-checkout-form>
+  </div>
 </div>
