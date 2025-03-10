@@ -95,6 +95,12 @@ export class AppModule {
     library.addIconPacks(fas); 
     library.addIconPacks(far); 
 
-    translate.use('it');
+    // Check for stored language preference in localStorage
+    const storedLang = localStorage.getItem('language');
+    if (storedLang) {
+      translate.use(storedLang);
+    } else {
+      translate.use('it');
+    }
   }
 }

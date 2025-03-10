@@ -7,6 +7,10 @@
         <fa-icon [icon]="'truck-fast'"></fa-icon>
     </div>
     }
+    <div class="language" (click)="toggleLanguage()" title="{{ 'switch-language' | translate }}">
+        <fa-icon [icon]="'language'"></fa-icon>
+        <span>{{ currentLang === 'it' ? 'Italiano' : 'English' }}</span>
+    </div>
     <div class="user" (click)="userClickedUserSection()">
         <fa-icon [icon]="'user'"></fa-icon>
         @if (loggedIn) {

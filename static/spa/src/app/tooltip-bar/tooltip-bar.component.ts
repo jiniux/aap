@@ -1,6 +1,7 @@
 import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '@auth0/auth0-angular';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-tooltip-bar',
@@ -13,11 +14,13 @@ export class TooltipBarComponent implements OnInit {
   loggedIn = false
   userFirstName = ''
   showLogoutMenu = false;
+  currentLang = 'it'; // Default language
 
   constructor(
     private readonly authService: AuthService,
     private readonly eRef: ElementRef,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly translateService: TranslateService
   ) {}
 
   openCart() {
@@ -47,6 +50,13 @@ export class TooltipBarComponent implements OnInit {
     }
   }
 
+  toggleLanguage() {
+    const newLang = this.currentLang === 'it' ? 'en' : 'it';
+    this.translateService.use(newLang);
+    this.currentLang = newLang;
+    localStorage.setItem('language', newLang);
+  }
+
   ngOnInit(): void {
     this.authService.isAuthenticated$.subscribe((isAuthenticated) => {
       this.loggedIn = isAuthenticated;
@@ -57,5 +67,14 @@ export class TooltipBarComponent implements OnInit {
         this.userFirstName = user.given_name ?? user.name ?? user.nickname ?? user.email ?? 'unknown';
       }
     });
+    
+    // Load language from localStorage
+    const storedLang = localStorage.getItem('language');
+    if (storedLang) {
+      this.translateService.use(storedLang);
+      this.currentLang = storedLang;
+    } else {
+      this.currentLang = this.translateService.currentLang;
+    }
   }
 }
