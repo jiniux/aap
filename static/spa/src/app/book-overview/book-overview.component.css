@@ -278,6 +278,28 @@
   color: #333;
   border-left: 2px solid #000;
   border-right: 2px solid #000;
+  text-align: center;
+  width: 30px;
+  background: none;
+  outline: none;
+  border-top: none;
+  border-bottom: none;
+  width: 55px;
+  appearance: textfield;
+}
+
+.book-overview .quantity-selector .quantity-value::outer-spin-button,
+.book-overview .quantity-selector .quantity-value::inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.book-overview .quantity-selector .quantity-value {
+  padding: 10px 15px;
+  font-size: 1.2em;
+  color: #333;
+  border-left: 2px solid #000;
+  border-right: 2px solid #000;
 }
 
 .book-overview .quantity-selector button:first-child {

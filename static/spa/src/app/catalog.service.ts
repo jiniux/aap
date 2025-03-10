@@ -7,6 +7,8 @@ import { API_URL } from '../constants';
 import { ensureValid } from '../ext/io-ts.ext';
 
 const API_SEARCH_BOOKS = `${API_URL}/books`;
+
+
 export const BookSearchResultEntry = t.type({
   title: t.string,
   isbn: t.string,
@@ -36,6 +38,12 @@ export const BookSearchResultEntry = t.type({
     })
   )
 });
+
+export const BookSearchResult = t.type({
+  totalPages: t.number,
+  currentPage: t.number,
+  entries: t.array(BookSearchResultEntry)
+})
 
 export const BookStocks = t.array(
   t.type({
@@ -74,8 +82,6 @@ const FullCatalogBookResult = t.type({
 
 export type FullCatalogBookResult = t.TypeOf<typeof FullCatalogBookResult>;
 
-const BookSearchResult = t.array(BookSearchResultEntry);
-
 export type BookSearchResults = t.TypeOf<typeof BookSearchResult>;
 
 @Injectable({
@@ -84,8 +90,8 @@ export type BookSearchResults = t.TypeOf<typeof BookSearchResult>;
 export class CatalogService {
   constructor(private readonly httpClient: HttpClient) { }
 
-  searchBooks(query: string): Observable<BookSearchResults> {
-    return this.httpClient.get(API_SEARCH_BOOKS + "?query=" + query, {}).pipe(map((response: any) => {
+  searchBooks(query: string, page: number = 0): Observable<BookSearchResults> {
+    return this.httpClient.get(`${API_SEARCH_BOOKS}?query=${query}&page=${page}`, {}).pipe(map((response: any) => {
       return ensureValid(BookSearchResult.decode(response));
     }))
   }

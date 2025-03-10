@@ -58,7 +58,17 @@ export class CartItemComponent implements OnInit {
     this.router.navigate(['/book', this.item.isbn]);
   }
 
+  validateQuantity() {
+    if (isNaN(this.tempQuantity) || this.tempQuantity < 1) {
+      this.tempQuantity = 1;
+    } else if (this.tempQuantity > 999) {
+      this.tempQuantity = 999;
+    }
+  }
+
   confirmEdit() {
+    this.validateQuantity();
+    
     if (this.tempQuantity !== this.item.quantity) {
       this.cartService.editQuantity({ 
         isbn: this.item.isbn, 

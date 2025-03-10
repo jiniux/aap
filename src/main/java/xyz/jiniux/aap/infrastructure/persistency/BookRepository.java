@@ -1,6 +1,7 @@
 package xyz.jiniux.aap.infrastructure.persistency;
 
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -19,8 +20,8 @@ public interface BookRepository extends JpaRepository<Book, Integer> {
     @Query("SELECT DISTINCT cb FROM Book cb JOIN cb.authors a " +
         "WHERE LOWER(cb.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
         "OR LOWER(a.firstName) LIKE LOWER(CONCAT('%', :query, '%'))" +
-        "OR LOWER(a.lastName) LIKE LOWER(CONCAT('%', :query, '%'))")
-    List<Book> searchBooks(@Param("query") String query, Pageable pageable);
+        "OR LOWER(a.lastName) LIKE LOWER(CONCAT('%', :query, '%')) order by cb.title")
+    Page<Book> searchBooks(@Param("query") String query, Pageable pageable);
 
     @Query("SELECT COUNT(cb) FROM Book cb JOIN cb.authors a WHERE a.id = :authorId")
     long countBookByAuthorId(@Param("authorId") Long authorId);
@@ -38,6 +39,6 @@ public interface BookRepository extends JpaRepository<Book, Integer> {
     @Query("SELECT cb FROM Book cb WHERE cb.isbn = :isbn")
     Optional<Book> findBookByIsbnForUpdate(String isbn);
 
-    @Query("SELECT cb FROM Book cb")
-    List<Book> searchBooks(Pageable pageable);
+    @Query("SELECT cb FROM Book cb order by cb.title")
+    Page<Book> searchBooks(Pageable pageable);
 }

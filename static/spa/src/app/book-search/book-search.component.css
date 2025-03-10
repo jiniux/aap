@@ -62,3 +62,52 @@
     justify-content: flex-start;
     flex-wrap: wrap;
 }
+
+.page-navigator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 0;
+    margin-top: 10px;
+}
+
+.page-nav-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s ease;
+}
+
+.page-nav-button:hover {
+    background-color: #357ae8;
+}
+
+.page-nav-button.prev {
+    margin-right: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.page-nav-button.next {
+    margin-left: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.page-nav-button.prev:hover, 
+.page-nav-button.next:hover {
+    transform: scale(1.05);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+
+.page-info {
+    margin: 0 15px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #555;
+}

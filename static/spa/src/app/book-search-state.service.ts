@@ -18,10 +18,10 @@ export class BookSearchStateService {
 
   constructor(private readonly catalogService: CatalogService) { }
 
-  public searchBook(query: string) {
+  public searchBook(query: string, page: number = 0) {
     this.searchSubscription?.unsubscribe();
 
-    this.searchSubscription = this.catalogService.searchBooks(query)
+    this.searchSubscription = this.catalogService.searchBooks(query, page)
       .pipe(
         map((results) => ({ loading: false, results } as BookSearchState)),
         startWith({ loading: true } as BookSearchState)
@@ -35,7 +35,7 @@ export class BookSearchStateService {
       });
   }
 
-  private _snapshot: BookSearchResults = []
+  private _snapshot: BookSearchResults = { currentPage: 0, totalPages: 0, entries: [] };
 
   public get snapshot () {
     return this._snapshot;

@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import lombok.NonNull;
 import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -80,10 +81,11 @@ public class CatalogService {
     }
 
     @Transactional(readOnly = true)
-    public List<Book> searchBooks(String query, int maxResultCount, int page) {
+    public Page<Book> searchBooks(String query, int maxResultCount, int page) {
         Pageable pageable = Pageable.ofSize(maxResultCount).withPage(page);
 
-        List<Book> books;
+
+        Page<Book> books;
         if (query != null) {
             books = bookRepository.searchBooks(query, pageable);
         } else {

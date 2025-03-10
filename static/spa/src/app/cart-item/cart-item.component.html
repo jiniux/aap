@@ -36,8 +36,12 @@
                 }
                 @if (isEditing) {
                     <div class="quantity-edit">
-                        <input type="number" [min]="1" [value]="tempQuantity"
-                               (input)="tempQuantity = $any($event.target).value" />
+                        <input type="number" 
+                               [min]="1" 
+                               [value]="tempQuantity"
+                               (input)="tempQuantity = $any($event.target).value" 
+                               (blur)="validateQuantity()"
+                               (keydown.enter)="validateQuantity(); confirmEdit()"/>
                         <button (click)="confirmEdit()">
                             <fa-icon style="color: white;" [icon]="'check'"></fa-icon>
                         </button>

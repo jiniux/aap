@@ -95,7 +95,12 @@
     
                     <div class="quantity-selector">
                         <button (click)="decrement()">-</button>
-                        <span class="quantity-value">{{ quantity }}</span>
+                        <input 
+                            type="text" 
+                            class="quantity-value" 
+                            [formControl]="quantityControl"
+                            (blur)="validateQuantity()"
+                            (keydown.enter)="validateQuantity()">
                         <button (click)="increment()">+</button>
                     </div>
                     <div class="add-to-cart-button" (click)="addBookToCart()"><fa-icon [icon]="'cart-plus'"></fa-icon>

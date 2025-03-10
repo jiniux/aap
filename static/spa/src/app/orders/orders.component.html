@@ -3,7 +3,13 @@
     {{ 'orders-title' | translate }}
 </h1>
 <div class="orders-container">
-    @for (order of orders; track $index) {
-        <app-order-summary [summary]="order"></app-order-summary>
+    @if (orders.length == 0) {
+        <div class="no-orders">
+            {{ 'no-orders' | translate }}
+        </div>
+    } @else {
+        @for (order of orders; track $index) {
+            <app-order-summary [summary]="order"></app-order-summary>
+        }
     }
 </div>

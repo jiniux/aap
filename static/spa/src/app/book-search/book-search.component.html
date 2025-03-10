@@ -10,7 +10,7 @@
     <app-loading-progress-bar></app-loading-progress-bar>
 } @else if (searchLoading === false) {
     <div class="search-results">
-        @for (entry of searchResults; track $index) {
+        @for (entry of searchResults.entries; track $index) {
             <app-landing-search-result 
                 [title]="entry.title" 
                 [stocks]="entry.stocks" 
@@ -20,4 +20,22 @@
             ></app-landing-search-result>
         }
     </div>
+    
+    @if (searchResults.entries.length > 0) {
+        <div class="page-navigator">
+            @if (searchResults.currentPage > 0) {
+                <button class="page-nav-button prev" (click)="goToPreviousPage()">
+                    <fa-icon [icon]="'arrow-left'"></fa-icon>
+                </button>
+            }
+            <span class="page-info">
+                {{ searchResults.currentPage + 1 }} / {{ searchResults.totalPages }}
+            </span>
+            @if (searchResults.currentPage < searchResults.totalPages - 1) {
+                <button class="page-nav-button next" (click)="goToNextPage()">
+                    <fa-icon [icon]="'arrow-right'"></fa-icon>
+                </button>
+            }
+        </div>
+    }
 }

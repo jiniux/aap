@@ -6,10 +6,10 @@ import { cmpFormatByPriority, cmpQualityByPriority } from '../../utils/stock-pri
 import { emojiFromStockQuality } from '../../utils/emoji-from-stock-quality';
 import { getSuitableFormatPreviewImageFromFormat } from '../../utils/most-suitable-preview-image';
 
-type Stock = BookSearchResults[0]['stocks'][0]
-type FormatPreviewImage = BookSearchResults[0]['formatPreviewImages'][0]
-type Author = BookSearchResults[0]['authors'][0]
-type Publisher = BookSearchResults[0]['publisher']
+type Stock = BookSearchResults['entries'][0]['stocks'][0]
+type FormatPreviewImage = BookSearchResults['entries'][0]['formatPreviewImages'][0]
+type Author = BookSearchResults['entries'][0]['authors'][0]
+type Publisher = BookSearchResults['entries'][0]['publisher']
 
 function computeBestStock(stocks: Readonly<Stock[]>): Stock {
   const tmp = new Array<Stock>(...stocks)

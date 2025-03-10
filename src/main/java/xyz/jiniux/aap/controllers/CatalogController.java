@@ -3,6 +3,7 @@ package xyz.jiniux.aap.controllers;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.ISBN;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -70,10 +71,10 @@ public class CatalogController {
         }
     }
 
-    private static final int BOOK_SEARCH_MAX_PAGE_SIZE = 50;
+    private static final int BOOK_SEARCH_MAX_PAGE_SIZE = 4;
 
     @GetMapping(value = "/books")
-    public ResponseEntity<List<BookSearchResultEntry>> searchBooks(
+    public ResponseEntity<BookSearchResult> searchBooks(
         @RequestParam(name = "query", required = false) String query,
         @RequestParam(name = "page", defaultValue = "0", required = false) int page,
         @RequestParam(name = "pageSize", required = false) Integer pageSize)
@@ -84,11 +85,12 @@ public class CatalogController {
             query = query.trim();
         }
 
-        List<Book> books = this.catalogService.searchBooks(query, pageSize, page);
-        books.forEach(book -> book.setStocks(book.getStocks().stream().filter(Stock::isAvailable).collect(Collectors.toSet())));
-        List<BookSearchResultEntry> entries = BookSearchResultEntryMapper.MAPPER.fromCatalogBooks(books);
+        Page<Book> books = this.catalogService.searchBooks(query, pageSize, page);
 
-        return ResponseEntity.ok(entries);
+        books.forEach(book -> book.setStocks(book.getStocks().stream().filter(Stock::isAvailable).collect(Collectors.toSet())));
+        List<BookSearchResultEntry> entries = BookSearchResultEntryMapper.MAPPER.fromCatalogBooks(books.getContent());
+
+        return ResponseEntity.ok(new BookSearchResult(entries, books.getTotalPages(), page));
     }
 
     // Use patch because the user does not need to specify all the fields of the book

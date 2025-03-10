@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { CatalogService, FullCatalogBookResult } from '../catalog.service';
 import { map, startWith, Subscription } from 'rxjs';
 import * as t from "io-ts"
@@ -12,6 +12,7 @@ import { CartService } from '../cart.service';
 import { AuthService } from '@auth0/auth0-angular';
 import { getSuitableFormatPreviewImageFromFormat } from '../../utils/most-suitable-preview-image';
 import Big from 'big.js';
+import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 
 type BookLoadStateResult = {
   title: string;
@@ -99,6 +100,8 @@ function mapFullCatalogBookResult(result: FullCatalogBookResult): BookLoadStateR
   styleUrl: './book-overview.component.css'
 })
 export class BookOverviewComponent {
+  @ViewChild('quantitySelector') quantitySelector: ElementRef | undefined;
+
   public state: BookLoadState = { loading: true };
   public selectedPreviewIndex = 0
 
@@ -118,14 +121,26 @@ export class BookOverviewComponent {
 
   private loadBookSubscription: Subscription | null = null
   private authSubscription: Subscription | null = null
+  
+  public quantityForm: FormGroup;
+  
+  get quantityControl(): FormControl {
+    return this.quantityForm.get('quantity') as FormControl;
+  }
 
   constructor(
     private readonly catalogService: CatalogService, 
     private readonly route: ActivatedRoute,
     private readonly toastService: ToastService,
     private readonly cartService: CartService,
-    private readonly authService: AuthService
-  ) { }
+    private readonly authService: AuthService,
+    private readonly fb: FormBuilder
+  ) { 
+    // Initialize form with quantity control and validation
+    this.quantityForm = this.fb.group({
+      quantity: [1, [Validators.required, Validators.min(1), Validators.max(999)]]
+    });
+  }
 
   public loggedIn = false
   
@@ -212,7 +227,7 @@ export class BookOverviewComponent {
       isbn: this.isbn,
       stockFormat: this.selectedStockFormat,
       stockQuality: this.stockQualitiesForSelectedFormat[this.selectedStockFormat][this.selectedStockQualityIndex][0],
-      quantity: this.quantity
+      quantity: this.quantityForm.get('quantity')!.value
     }).subscribe((result) => {
       if (result.type === "success") {
         this.toastService.showSuccess("book-added-to-cart")
@@ -247,16 +262,35 @@ export class BookOverviewComponent {
     })
   }
 
-  quantity = 1;
-
   increment() {
-    this.quantity++;
+    const currentValue = this.quantityForm.get('quantity')!.value;
+    this.quantityForm.patchValue({
+      quantity: currentValue + 1
+    });
   }
 
   decrement() {
-    if (this.quantity > 1) {
-      this.quantity--;
+    const currentValue = this.quantityForm.get('quantity')!.value;
+    if (currentValue > 1) {
+      this.quantityForm.patchValue({
+        quantity: currentValue - 1
+      });
     }
+  }
+  
+  validateQuantity() {
+    const quantityControl = this.quantityForm.get('quantity')!;
+    let value = quantityControl.value;
+    
+    if (isNaN(value) || value < 1) {
+      value = 1;
+    } else if (value > 999) {
+      value = 999;
+    }
+    
+    this.quantityForm.patchValue({
+      quantity: value
+    });
   }
 
   ngOnDestroy() {
