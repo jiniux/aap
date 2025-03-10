@@ -211,6 +211,10 @@ export class CartService {
 
   private loadCartFromLocalStorage() {
     const json = localStorage.getItem(LOCAL_STORAGE_CART_ITEMS_KEY);
+    if (json === null || json === undefined) {
+      return;
+    }
+
     const { items, removedItems, priceChangedItems } = ensureValid(LocalStorageCart.decode(JSON.parse(json ?? '{}')));
     if (items !== null || items !== undefined) {
       this.processNewItems(items);

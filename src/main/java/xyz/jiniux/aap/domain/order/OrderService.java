@@ -100,7 +100,6 @@ public class OrderService {
             Address address,
             BigDecimal shipmentCost
     ) throws NotEnoughItemsInStockException,
-            BookNotFoundException,
             StockNotOnSaleException,
             ItemsPriceChangedWhilePlacingOrderException,
             ShipmentCostChangedException

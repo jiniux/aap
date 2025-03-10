@@ -135,5 +135,23 @@
     "cart-notice-dismiss-button-label": "Chiudi",
     "remove-items-notice": "I seguenti articoli non sono più disponibili nelle quantità richieste:",
     "remove-items-notice-item": "<strong>{{title}}</strong> di <strong>{{authors}}</strong> (qualità: <strong>{{quality}}</strong>, formato: <strong>{{format}}</strong>)",
-    "are-you-sure": "Sei sicuro?"
+    "book-categories": {
+        "fiction": "Narrativa",
+        "non-fiction": "Saggistica",
+        "science-fiction": "Fantascienza",
+        "mystery": "Giallo/Mistero",
+        "fantasy": "Fantasy",
+        "biography": "Biografia",
+        "history": "Storia",
+        "self-help": "Auto-aiuto",
+        "thriller": "Thriller",
+        "romance": "Romantico",
+        "children": "Libri per bambini",
+        "poetry": "Poesia",
+        "horror": "Horror", 
+        "technology": "Tecnologia",
+        "business": "Economia e business"
+    },
+    "book-categories-label": "Categorie",
+    "are-you-sure": "Sei sicuro?"   
 }

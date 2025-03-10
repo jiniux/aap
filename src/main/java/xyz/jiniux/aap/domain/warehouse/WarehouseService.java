@@ -9,9 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.jiniux.aap.domain.catalog.exceptions.BookNotFoundException;
 import xyz.jiniux.aap.domain.warehouse.exceptions.*;
-import xyz.jiniux.aap.infrastructure.persistency.CatalogBookRepository;
+import xyz.jiniux.aap.infrastructure.persistency.BookRepository;
 import xyz.jiniux.aap.infrastructure.persistency.StockRepository;
-import xyz.jiniux.aap.domain.model.CatalogBook;
+import xyz.jiniux.aap.domain.model.Book;
 import xyz.jiniux.aap.domain.model.Stock;
 import xyz.jiniux.aap.domain.model.StockFormat;
 import xyz.jiniux.aap.domain.model.StockQuality;
@@ -24,16 +24,16 @@ import java.util.Map;
 
 @Service
 public class WarehouseService {
-    private final CatalogBookRepository catalogBookRepository;
+    private final BookRepository bookRepository;
     private final StockRepository stockRepository;
     private final EntityManager entityManager;
 
     public WarehouseService(
-        CatalogBookRepository catalogBookRepository,
+        BookRepository bookRepository,
         StockRepository stockRepository,
         EntityManager entityManager
     ) {
-        this.catalogBookRepository = catalogBookRepository;
+        this.bookRepository = bookRepository;
         this.stockRepository = stockRepository;
         this.entityManager = entityManager;
     }
@@ -54,10 +54,10 @@ public class WarehouseService {
         @NonNull StockQuality stockQuality,
         long quantity
     ) throws BookNotFoundException {
-        CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbnForShare(isbn)
+        Book book = bookRepository.findBookByIsbnForShare(isbn)
             .orElseThrow(() -> new BookNotFoundException(isbn));
 
-        Stock stock = getOrCreateStockForUpdate(catalogBook.getId(), stockFormat, stockQuality);
+        Stock stock = getOrCreateStockForUpdate(book.getId(), stockFormat, stockQuality);
         stock.addQuantity(quantity);
 
         stockRepository.save(stock);
@@ -72,10 +72,10 @@ public class WarehouseService {
     )
         throws BookNotFoundException
     {
-        CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbnForShare(isbn)
+        Book book = bookRepository.findBookByIsbnForShare(isbn)
             .orElseThrow(() -> new BookNotFoundException(isbn));
 
-        Stock stock = getOrCreateStockForUpdate(catalogBook.getId(), stockFormat, stockQuality);
+        Stock stock = getOrCreateStockForUpdate(book.getId(), stockFormat, stockQuality);
         stock.setPriceEur(priceEur);
 
         stockRepository.save(stock);
@@ -87,10 +87,10 @@ public class WarehouseService {
         @NonNull StockFormat stockFormat,
         @NonNull StockQuality stockQuality
     ) throws BookNotFoundException, StockAlreadyOnSaleException, StockPriceNotSetException {
-        CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbnForShare(isbn)
+        Book book = bookRepository.findBookByIsbnForShare(isbn)
             .orElseThrow(() -> new BookNotFoundException(isbn));
 
-        Stock stock = getOrCreateStockForUpdate(catalogBook.getId(), stockFormat, stockQuality);
+        Stock stock = getOrCreateStockForUpdate(book.getId(), stockFormat, stockQuality);
 
         if (stock.getPriceEur() == null)
             throw new StockPriceNotSetException(isbn, stockFormat, stockQuality);
@@ -109,10 +109,10 @@ public class WarehouseService {
         @NonNull StockFormat stockFormat,
         @NonNull StockQuality stockQuality
     ) throws BookNotFoundException, StockNotOnSaleException {
-        CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbnForShare(isbn)
+        Book book = bookRepository.findBookByIsbnForShare(isbn)
             .orElseThrow(() -> new BookNotFoundException(isbn));
 
-        Stock stock = getOrCreateStockForUpdate(catalogBook.getId(), stockFormat, stockQuality);
+        Stock stock = getOrCreateStockForUpdate(book.getId(), stockFormat, stockQuality);
 
         if (!stock.isOnSale())
             throw new StockNotOnSaleException(isbn, stockFormat, stockQuality);

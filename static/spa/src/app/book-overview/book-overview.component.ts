@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CatalogService, FullCatalogBookResult } from '../catalog.service';
 import { map, startWith, Subscription } from 'rxjs';
 import * as t from "io-ts"
-import { StockFormat, StockQuality } from '../../utils/types';
+import { BookCategory, StockFormat, StockQuality } from '../../utils/types';
 import { ActivatedRoute } from '@angular/router';
 import { cmpFormatByPriority, cmpQualityByPriority } from '../../utils/stock-priorities';
 import { emojiFromStockQuality, EmojiNameWithColor } from '../../utils/emoji-from-stock-quality';
@@ -11,6 +11,7 @@ import { ToastService } from '../toast.service';
 import { CartService } from '../cart.service';
 import { AuthService } from '@auth0/auth0-angular';
 import { getSuitableFormatPreviewImageFromFormat } from '../../utils/most-suitable-preview-image';
+import Big from 'big.js';
 
 type BookLoadStateResult = {
   title: string;
@@ -19,11 +20,12 @@ type BookLoadStateResult = {
   publisher: string;
   edition: string;
   description: string;
+  categories: t.TypeOf<typeof BookCategory>[];
   publicationYear: number;
   stocks: {
     format: t.TypeOf<typeof StockFormat>;
     quality: t.TypeOf<typeof StockQuality>;
-    priceEur: string;
+    priceEur: Big;
   }[];
   preview: {
     url: string;
@@ -38,6 +40,35 @@ type BookLoadState = {
   result: BookLoadStateResult;
 };
 
+
+type Stock = BookLoadStateResult['stocks'][0]
+
+function computeBestStock(stocks: Readonly<Stock[]>): Stock {
+  const tmp = new Array<Stock>(...stocks)
+
+  if (tmp.length === 1) {
+    return tmp[0]
+  } 
+
+  tmp.sort((a, b) => {
+    const qualityCmp = cmpQualityByPriority(a.quality, b.quality)
+    
+    if (qualityCmp !== 0) {
+      return qualityCmp
+    }
+    
+    const formatCmp = cmpFormatByPriority(a.format, b.format)
+    
+    if (formatCmp !== 0) {
+      return formatCmp
+    }
+
+    return a.priceEur.cmp(b.priceEur)
+  })
+  
+  return tmp[0]
+}
+
 function mapFullCatalogBookResult(result: FullCatalogBookResult): BookLoadStateResult {
   return {
     title: result.title,
@@ -50,12 +81,13 @@ function mapFullCatalogBookResult(result: FullCatalogBookResult): BookLoadStateR
     stocks: result.stocks.map((s) => ({
       format: s.format,
       quality: s.quality,
-      priceEur: s.priceEur.toFixed(2)
+      priceEur: s.priceEur
     })),
     preview: result.formatPreviewImages.map((p) => ({
       url: p.url,
       format: p.format
-    }))
+    })),
+    categories: result.categories
   }
 }
 
@@ -106,7 +138,7 @@ export class BookOverviewComponent {
 
       this.state.result.stocks
         .forEach(s => {
-          const pair: [t.TypeOf<typeof StockQuality>, string, EmojiNameWithColor] = [s.quality, s.priceEur, emojiFromStockQuality(s.quality)];
+          const pair: [t.TypeOf<typeof StockQuality>, string, EmojiNameWithColor] = [s.quality, s.priceEur.toFixed(2), emojiFromStockQuality(s.quality)];
           this.stockQualitiesForSelectedFormat[s.format].push(pair);
         });
 
@@ -201,12 +233,16 @@ export class BookOverviewComponent {
       this.state = state;
 
       if (this.state.loading === false) {
+        let bestStock = computeBestStock(this.state.result.stocks)
+
         this.stockFormats = _.uniq(this.state.result.stocks.map((s) => s.format))
         this.stockFormats.sort(cmpFormatByPriority)
-        this.selectedStockFormat = this.stockFormats[0]
+        this.selectedStockFormat = bestStock.format
 
         this.updateSelectedStockQualities()
         this.updateItemBeingAdded()
+
+        this.selectedStockQualityIndex = this.stockQualitiesForSelectedFormat[bestStock.format].findIndex((pair) => pair[0] === bestStock.quality)
       }
     })
   }

@@ -2,7 +2,9 @@ package xyz.jiniux.aap.domain.catalog;
 
 import lombok.Builder;
 import lombok.Data;
+import xyz.jiniux.aap.domain.model.BookCategory;
 
+import java.util.List;
 import java.util.Set;
 
 @Builder
@@ -17,6 +19,8 @@ public class PartialCatalogBook {
     private String edition;
 
     private Set<Long> authorIds;
+
+    private Set<BookCategory> categories;
 
     private Long publisherId;
 }

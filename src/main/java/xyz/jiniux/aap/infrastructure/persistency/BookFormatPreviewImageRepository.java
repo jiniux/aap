@@ -10,6 +10,6 @@ import java.util.Optional;
 
 @Repository
 public interface BookFormatPreviewImageRepository extends JpaRepository<BookFormatPreviewImage, Long> {
-    @Query("select i from BookFormatPreviewImage i, CatalogBook book where book.isbn = :isbn and i.format = :format and i.bookId = book.id")
+    @Query("select i from BookFormatPreviewImage i, Book book where book.isbn = :isbn and i.format = :format and i.bookId = book.id")
     Optional<BookFormatPreviewImage> findByQualityAndFormat(String isbn, StockFormat format);
 }

@@ -22,6 +22,9 @@ public class BookRegistrationRequest implements Serializable {
     private String description;
 
     @NotNull
+    ValidList<@ValidBookCategory String> categories;
+
+    @NotNull
     @ValidBookPublicationYear
     private Integer publicationYear = -1;
 

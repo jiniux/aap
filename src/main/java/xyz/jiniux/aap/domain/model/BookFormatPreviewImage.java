@@ -23,7 +23,7 @@ public class BookFormatPreviewImage {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bookId", insertable = false, updatable = false)
-    private CatalogBook book;
+    private Book book;
 
     @Column(nullable = false)
     private StockFormat format;

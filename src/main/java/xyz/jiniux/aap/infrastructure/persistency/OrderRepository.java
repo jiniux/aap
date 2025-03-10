@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import xyz.jiniux.aap.domain.model.Order;
+import xyz.jiniux.aap.domain.model.Payment;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,4 +20,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("select o from Order o where o.username = :username order by o.placedAt desc")
     List<Order> findAllByUsername(@Param("username") String username);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select o from Order o where o.payment.id = :paymentId")
+    Optional<Order> findOrderByPaymentIdForUpdate(@Param("paymentId") Long paymentId);
 }

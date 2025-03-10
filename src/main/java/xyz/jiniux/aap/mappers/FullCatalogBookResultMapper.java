@@ -6,11 +6,8 @@ import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import xyz.jiniux.aap.controllers.results.FullCatalogBookResult;
-import xyz.jiniux.aap.domain.model.BookFormatPreviewImage;
-import xyz.jiniux.aap.domain.model.CatalogBook;
-import xyz.jiniux.aap.domain.model.Stock;
-import xyz.jiniux.aap.domain.model.StockFormat;
-import xyz.jiniux.aap.domain.model.StockQuality;
+import xyz.jiniux.aap.domain.model.*;
+import xyz.jiniux.aap.domain.model.Book;
 
 @Mapper
 public interface FullCatalogBookResultMapper {
@@ -32,6 +29,9 @@ public interface FullCatalogBookResultMapper {
         return StockFormatMapper.MAPPER.toString(value);
     }
 
+    @Named("categoryToString")
+    static String categoryToString(BookCategory value) {return BookCategoryMapper.MAPPER.toString(value);}
+
     @Named("stockPreviewImageIdToUrl")
     static String stockPreviewImageIdToUrl(Long id) {
         return "/book-format-preview-images/" + id;
@@ -40,5 +40,6 @@ public interface FullCatalogBookResultMapper {
     FullCatalogBookResultMapper MAPPER = Mappers.getMapper(FullCatalogBookResultMapper.class);
 
     @Mapping(target = "stocks", source = "stocks")
-    FullCatalogBookResult fromCatalogBook(CatalogBook catalogBook);
+    @Mapping(target = "categories", source = "categories", qualifiedByName = "categoryToString")
+    FullCatalogBookResult fromCatalogBook(Book book);
 }

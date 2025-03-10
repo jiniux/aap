@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import xyz.jiniux.aap.domain.catalog.exceptions.*;
 import xyz.jiniux.aap.domain.model.*;
 import xyz.jiniux.aap.infrastructure.persistency.AuthorRepository;
-import xyz.jiniux.aap.infrastructure.persistency.CatalogBookRepository;
+import xyz.jiniux.aap.infrastructure.persistency.BookRepository;
 import xyz.jiniux.aap.infrastructure.persistency.PublisherRepository;
 import xyz.jiniux.aap.infrastructure.persistency.BookFormatPreviewImageRepository;
 
@@ -30,20 +30,20 @@ import java.util.*;
 
 @Service
 public class CatalogService {
-    private final CatalogBookRepository catalogBookRepository;
+    private final BookRepository bookRepository;
     private final AuthorRepository authorRepository;
     private final PublisherRepository publisherRepository;
     private final EntityManager entityManager;
     private final BookFormatPreviewImageRepository bookFormatPreviewImageRepository;
 
     public CatalogService(
-        CatalogBookRepository catalogBookRepository,
+        BookRepository bookRepository,
         AuthorRepository authorRepository,
         PublisherRepository publisherRepository,
         EntityManager entityManager,
         BookFormatPreviewImageRepository bookFormatPreviewImageRepository)
     {
-        this.catalogBookRepository = catalogBookRepository;
+        this.bookRepository = bookRepository;
         this.authorRepository = authorRepository;
         this.publisherRepository = publisherRepository;
         this.entityManager = entityManager;
@@ -52,16 +52,19 @@ public class CatalogService {
 
     @Transactional(isolation = Isolation.REPEATABLE_READ, rollbackFor = Exception.class)
     @Retryable(retryFor = CannotAcquireLockException.class)
-    public void registerBook(@NonNull CatalogBook book)
+    public void registerBook(@NonNull Book book)
         throws AuthorsNotFoundException,
         PublisherNotFoundException,
         ISBNAlreadyRegisteredException,
         NoAuthorSpecifiedException
     {
         if (book.getId() != null)
-            throw new IllegalArgumentException("catalogBook has already an id");
+            throw new IllegalArgumentException("book has already an id");
 
-        if (catalogBookRepository.existsByIsbn(book.getIsbn()))
+        if (book.getCategories().isEmpty())
+            throw new IllegalArgumentException("book has no categories");
+
+        if (bookRepository.existsByIsbn(book.getIsbn()))
             throw new ISBNAlreadyRegisteredException(book.getIsbn());
 
         if (book.getAuthorIds().isEmpty())
@@ -73,18 +76,18 @@ public class CatalogService {
         if (!publisherRepository.existsById(book.getPublisherId()))
             throw new PublisherNotFoundException(book.getPublisherId());
 
-        catalogBookRepository.save(book);
+        bookRepository.save(book);
     }
 
     @Transactional(readOnly = true)
-    public List<CatalogBook> searchBooks(String query, int maxResultCount, int page) {
+    public List<Book> searchBooks(String query, int maxResultCount, int page) {
         Pageable pageable = Pageable.ofSize(maxResultCount).withPage(page);
 
-        List<CatalogBook> books;
+        List<Book> books;
         if (query != null) {
-            books = catalogBookRepository.searchCatalogBooks(query, pageable);
+            books = bookRepository.searchBooks(query, pageable);
         } else {
-            books = catalogBookRepository.searchCatalogBooks(pageable);
+            books = bookRepository.searchBooks(pageable);
         }
 
         return books;
@@ -105,7 +108,7 @@ public class CatalogService {
         if (image.isPresent()) {
             return image.get();
         } else {
-            CatalogBook book = catalogBookRepository.findCatalogBookByIsbn(isbn)
+            Book book = bookRepository.findBookByIsbn(isbn)
                 .orElseThrow(() -> new BookNotFoundException(isbn));
 
             BookFormatPreviewImage stockPreviewImage = new BookFormatPreviewImage();
@@ -170,19 +173,9 @@ public class CatalogService {
     }
 
     @Transactional(readOnly = true)
-    public CatalogBook getBook(@NonNull String isbn) throws BookNotFoundException {
-        return catalogBookRepository.findCatalogBookByIsbn(isbn)
+    public Book getBook(@NonNull String isbn) throws BookNotFoundException {
+        return bookRepository.findBookByIsbn(isbn)
             .orElseThrow(() -> new BookNotFoundException(isbn));
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void removeBook(@NonNull String isbn) throws BookNotFoundException {
-        CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbn(isbn)
-            .orElseThrow(() -> new BookNotFoundException(isbn));
-
-        entityManager.lock(catalogBook, LockModeType.OPTIMISTIC);
-
-        catalogBookRepository.delete(catalogBook);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -192,22 +185,25 @@ public class CatalogService {
         PublisherNotFoundException,
         NoAuthorSpecifiedException
     {
-        CatalogBook catalogBook = catalogBookRepository.findCatalogBookByIsbn(isbn)
+        Book book = bookRepository.findBookByIsbn(isbn)
             .orElseThrow(() -> new BookNotFoundException(isbn));
 
-        entityManager.lock(catalogBook, LockModeType.OPTIMISTIC);
+        entityManager.lock(book, LockModeType.OPTIMISTIC);
 
         if (partialCatalogBook.getEdition() != null)
-            catalogBook.setEdition(partialCatalogBook.getEdition());
+            book.setEdition(partialCatalogBook.getEdition());
 
         if (partialCatalogBook.getPublicationYear() != null)
-            catalogBook.setPublicationYear(partialCatalogBook.getPublicationYear());
+            book.setPublicationYear(partialCatalogBook.getPublicationYear());
 
         if (partialCatalogBook.getTitle() != null)
-            catalogBook.setTitle(partialCatalogBook.getTitle());
+            book.setTitle(partialCatalogBook.getTitle());
 
         if (partialCatalogBook.getDescription() != null)
-            catalogBook.setDescription(partialCatalogBook.getDescription());
+            book.setDescription(partialCatalogBook.getDescription());
+
+        if (partialCatalogBook.getCategories() != null)
+            book.setCategories(partialCatalogBook.getCategories());
 
         if (partialCatalogBook.getAuthorIds() != null) {
             Set<Long> authorIds = partialCatalogBook.getAuthorIds();
@@ -218,7 +214,7 @@ public class CatalogService {
             if (!authorRepository.doAllAuthorsExist(authorIds))
                 throw new AuthorsNotFoundException(authorRepository.getMissingAuthorIds(authorIds));
 
-            catalogBook.setAuthorIds(authorIds);
+            book.setAuthorIds(authorIds);
         }
 
         if (partialCatalogBook.getPublisherId() != null) {
@@ -227,10 +223,10 @@ public class CatalogService {
             Publisher publisher = publisherRepository.findById(publisherId)
                 .orElseThrow(() -> new PublisherNotFoundException(publisherId));
 
-            catalogBook.setPublisher(publisher);
+            book.setPublisher(publisher);
         }
 
-        catalogBookRepository.save(catalogBook);
+        bookRepository.save(book);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -260,24 +256,6 @@ public class CatalogService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void removeAuthor(long authorId)
-        throws AuthorNotFoundException,
-        AuthorHasBooksException
-    {
-        Author author = authorRepository.findById(authorId)
-            .orElseThrow(() -> new AuthorNotFoundException(authorId));
-
-        entityManager.lock(author, LockModeType.OPTIMISTIC);
-
-        boolean authorHasBooks = catalogBookRepository.countCatalogBookByAuthorId(author.getId()) > 0;
-
-        if (authorHasBooks)
-            throw new AuthorHasBooksException(authorId);
-
-        authorRepository.delete(author);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
     public void registerPublisher(@NonNull Publisher publisher) {
         if (publisher.getId() != null)
             throw new IllegalArgumentException("publisher has already an id");
@@ -298,24 +276,6 @@ public class CatalogService {
             publisher.setName(partialPublisher.name());
 
         publisherRepository.save(publisher);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void removePublisher(long publisherId)
-        throws PublisherNotFoundException,
-        PublisherHasBooksException
-    {
-        Publisher publisher = publisherRepository.findById(publisherId)
-            .orElseThrow(() -> new PublisherNotFoundException(publisherId));
-
-        entityManager.lock(publisher, LockModeType.OPTIMISTIC);
-
-        boolean publisherHasBooks = catalogBookRepository.countCatalogBookByPublisherId(publisher.getId()) > 0;
-
-        if (publisherHasBooks)
-            throw new PublisherHasBooksException(publisherId);
-
-        publisherRepository.delete(publisher);
     }
 
     @Transactional(readOnly = true)

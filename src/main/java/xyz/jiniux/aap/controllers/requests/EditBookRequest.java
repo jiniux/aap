@@ -25,6 +25,8 @@ public class EditBookRequest implements Serializable {
 
     private ValidSet<@ValidAuthorId String> authorIds;
 
+    private ValidList<@ValidBookCategory String> categories;
+
     @ValidPublisherId
     private String publisherId;
 }

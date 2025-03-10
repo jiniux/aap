@@ -1,17 +1,19 @@
 package xyz.jiniux.aap.domain.model;
 
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.Type;
 
 import java.util.List;
 import java.util.Set;
 
 @Data
 @Entity
-@Table(name = "catalog_books")
+@Table(name = "books")
 @EqualsAndHashCode(of = "id")
-public class CatalogBook {
+public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,12 +33,17 @@ public class CatalogBook {
     @Column()
     private String edition;
 
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    @Access(AccessType.FIELD)
+    private Set<BookCategory> categories;
+
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "bookId")
     List<BookFormatPreviewImage> formatPreviewImages;
 
     @ElementCollection
-    @CollectionTable(name = "catalog_book_authors", joinColumns = @JoinColumn(name = "catalogBookId"))
+    @CollectionTable(name = "book_authors", joinColumns = @JoinColumn(name = "bookId"))
     @Column(name = "authorId")
     private Set<Long> authorIds;
 
@@ -45,8 +52,8 @@ public class CatalogBook {
         fetch = FetchType.LAZY
     )
     @JoinTable(
-        name = "catalog_book_authors",
-        joinColumns = @JoinColumn(name = "catalogBookId"),
+        name = "book_authors",
+        joinColumns = @JoinColumn(name = "bookId"),
         inverseJoinColumns = @JoinColumn(name = "authorId"))
     private Set<Author> authors;
 

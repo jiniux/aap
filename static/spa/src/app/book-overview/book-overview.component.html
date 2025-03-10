@@ -113,6 +113,11 @@
                 <div class="field-label">{{ 'book-description' | translate | uppercase }}</div><div class="content">{{ state.result.description }}</div>
                 <div class="field-label">{{ 'book-publication-year' | translate | uppercase }}</div><div class="content">{{ state.result.publicationYear }}</div>
                 <div class="field-label">{{ 'book-edition' | translate | uppercase }}</div><div class="content">{{ state.result.edition }}</div>
+                <div class="field-label">{{ 'book-categories-label' | translate | uppercase }}</div><div class="content categories">
+                    @for (category of state.result.categories; track $index) {
+                        <span>{{ 'book-categories.' + category | translate | lowercase }}</span>
+                    }
+                </div>
             </div>
         </div>
     </div>

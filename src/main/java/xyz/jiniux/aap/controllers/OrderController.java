@@ -70,36 +70,4 @@ public class OrderController {
         FullOrderResult orderResult = FullOrderResultMapper.MAPPER.fromOrder(order);
         return ResponseEntity.ok(orderResult);
     }
-
-    @PostMapping(value = "/orders/action/place")
-    @PreAuthorize("hasAuthority('place:order')")
-    @Transactional
-    public ResponseEntity<?> placeOrder(Principal principal, @RequestBody @Valid CheckoutRequest requestItems) {
-        List<ShoppingCart.Item> items = CartItemMapper.MAPPER.fromCheckoutRequestItems(requestItems.items());
-        PaymentStrategy paymentStrategy = requestItems.paymentStrategy().convert();
-        Address address = AddressMapper.MAPPER.fromCheckoutRequestAddress(requestItems.address());
-
-        try {
-            orderService.placeOrderFromShoppingCartItems(principal.getName(), items, paymentStrategy, address, requestItems.shipmentCost());
-            boolean cleared = shoppingCartService.clearShoppingCart(principal.getName(), items, requestItems.cartVersion());
-
-            return ResponseEntity.ok(new CheckoutResult(cleared));
-        } catch (NotEnoughItemsInStockException e) {
-            String stockFormatString = StockFormatMapper.MAPPER.toString(e.getStockFormat());
-            String stockQualityString = StockQualityMapper.MAPPER.toString(e.getStockQuality());
-
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse.createNotEnoughItemsInStock(e.getIsbn(), stockFormatString, stockQualityString));
-        } catch (BookNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.createBookNotFound(e.getIsbn()));
-        } catch (StockNotOnSaleException e) {
-            String stockFormatString = StockFormatMapper.MAPPER.toString(e.getStockFormat());
-            String stockQualityString = StockQualityMapper.MAPPER.toString(e.getStockQuality());
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.createStockNotOnSale(e.getIsbn(), stockFormatString, stockQualityString));
-        } catch (ItemsPriceChangedWhilePlacingOrderException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.createItemsPriceChanged(e.getInfo()));
-        } catch (ShipmentCostChangedException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

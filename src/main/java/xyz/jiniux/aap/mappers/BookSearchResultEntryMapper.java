@@ -37,6 +37,6 @@ public interface BookSearchResultEntryMapper {
     }
 
     @Mapping(target = "stocks", source = "stocks")
-    List<BookSearchResultEntry> fromCatalogBooks(List<CatalogBook> book);
+    List<BookSearchResultEntry> fromCatalogBooks(List<Book> book);
 
 }

@@ -41,7 +41,15 @@ public class CatalogController {
     public ResponseEntity<?> registerBook(@RequestBody @Valid BookRegistrationRequest request)
     {
         try {
-            this.catalogService.registerBook(CatalogBookMapper.MAPPER.fromBookRegistrationRequest(request));
+            Book book = BookMapper.MAPPER.fromBookRegistrationRequest(request);
+
+            if (book.getCategories().isEmpty()) {
+                return ResponseEntity.badRequest().body(
+                    ErrorResponse.createNoCategorySpecified()
+                );
+            }
+
+            this.catalogService.registerBook(book);
             return ResponseEntity.created(URI.create("/books/" + ISBNCleaner.clean(request.getIsbn()))).build();
         } catch (AuthorsNotFoundException e) {
             return ResponseEntity.badRequest().body(
@@ -76,7 +84,7 @@ public class CatalogController {
             query = query.trim();
         }
 
-        List<CatalogBook> books = this.catalogService.searchBooks(query, pageSize, page);
+        List<Book> books = this.catalogService.searchBooks(query, pageSize, page);
         books.forEach(book -> book.setStocks(book.getStocks().stream().filter(Stock::isAvailable).collect(Collectors.toSet())));
         List<BookSearchResultEntry> entries = BookSearchResultEntryMapper.MAPPER.fromCatalogBooks(books);
 
@@ -85,7 +93,7 @@ public class CatalogController {
 
     // Use patch because the user does not need to specify all the fields of the book
     @PatchMapping(value = "/books/{isbn}")
-    @PreAuthorize("hasRole('manage:books')")
+    @PreAuthorize("hasAuthority('manage:books')")
     public ResponseEntity<?> editBook(
         @PathVariable(name = "isbn") @NotNull @ISBN String isbn,
         @Valid @RequestBody EditBookRequest request
@@ -94,7 +102,7 @@ public class CatalogController {
         try {
             this.catalogService.editBook(
                 ISBNCleaner.clean(isbn),
-                PartialCatalogBookMapper.MAPPER.fromEditBookRequest(request)
+                PartialBookMapper.MAPPER.fromEditBookRequest(request)
             );
 
             return ResponseEntity.ok().build();
@@ -137,24 +145,9 @@ public class CatalogController {
         @PathVariable(name = "isbn") @NotNull @ISBN String isbn
     ) {
         try {
-            CatalogBook book = this.catalogService.getBook(ISBNCleaner.clean(isbn));
+            Book book = this.catalogService.getBook(ISBNCleaner.clean(isbn));
             book.setStocks(book.getStocks().stream().filter(Stock::isAvailable).collect(Collectors.toSet()));
             return ResponseEntity.ok(FullCatalogBookResultMapper.MAPPER.fromCatalogBook(book));
-        } catch (BookNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                ErrorResponse.createBookNotFound(e.getIsbn())
-            );
-        }
-    }
-
-    @DeleteMapping(value = "/books/{isbn}")
-    @PreAuthorize("hasAuthority('manage:books')")
-    public ResponseEntity<?> removeBook(
-        @PathVariable(name = "isbn") @NotNull @ISBN String isbn
-    ) {
-        try {
-            this.catalogService.removeBook(ISBNCleaner.clean(isbn));
-            return ResponseEntity.ok().build();
         } catch (BookNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 ErrorResponse.createBookNotFound(e.getIsbn())
@@ -191,26 +184,6 @@ public class CatalogController {
         }
     }
 
-    @DeleteMapping(value = "/authors/{authorId}")
-    @PreAuthorize("hasAuthority('manage:authors')")
-    public ResponseEntity<?> removeAuthor(
-        @PathVariable("authorId") @NotNull @ValidAuthorId String authorId
-    ) {
-        try {
-            this.catalogService.removeAuthor(Long.parseLong(authorId));
-        } catch (AuthorNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                ErrorResponse.createAuthorNotFound(Long.toString(e.getAuthorId()))
-            );
-        } catch (AuthorHasBooksException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ErrorResponse.createAuthorHasBooks(Long.toString(e.getAuthorId()))
-            );
-        }
-
-        return ResponseEntity.ok().build();
-    }
-
     @PostMapping(value = "/publishers")
     @PreAuthorize("hasAuthority('manage:publishers')")
     public ResponseEntity<Void> registerPublisher(
@@ -240,26 +213,6 @@ public class CatalogController {
         }
     }
 
-    @DeleteMapping(value = "/publishers/{publisherId}")
-    @PreAuthorize("hasAuthority('manage:publishers')")
-    public ResponseEntity<?> removePublisher(
-        @PathVariable("publisherId") @NotNull @ValidPublisherId String publisherId
-    ) {
-        try {
-            this.catalogService.removePublisher(Long.parseLong(publisherId));
-
-            return ResponseEntity.ok().build();
-        } catch (PublisherNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                ErrorResponse.createPublisherNotFound(Long.toString(e.getPublisherId()))
-            );
-        } catch (PublisherHasBooksException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ErrorResponse.createPublisherHasBooks(Long.toString(e.getPublisherId()))
-            );
-        }
-    }
-
     @GetMapping(value = "/publishers/{publisherId}")
     public ResponseEntity<?> getPublisher(
         @PathVariable("publisherId") @NotNull @ValidPublisherId String publisherId
@@ -269,7 +222,8 @@ public class CatalogController {
                 this.catalogService.getPublisher(Long.parseLong(publisherId)));
 
             return ResponseEntity.ok(result);
-        } catch (PublisherNotFoundException e) {
+        }
+        catch (PublisherNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 ErrorResponse.createPublisherHasBooks(Long.toString(e.getPublisherId()))
             );

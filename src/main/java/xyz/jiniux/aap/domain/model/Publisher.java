@@ -17,7 +17,7 @@ public class Publisher {
     private String name;
 
     @OneToMany(mappedBy = "publisher")
-    private List<CatalogBook> books;
+    private List<Book> books;
 
     @Version
     private Long version;

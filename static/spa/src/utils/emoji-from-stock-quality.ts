@@ -11,7 +11,7 @@ export function emojiFromStockQuality(q: StockQualityT): EmojiNameWithColor {
         case "new": return { emojiName: "star", color: "darkgreen" };
         case "like-new": return { emojiName: "smile", color: "green" };
         case "very-good": return { emojiName: "smile", color: "lightgreen" };
-        case "good": return { emojiName: "smile", color: "yellow" };
+        case "good": return { emojiName: "smile", color: "#f5c71a" };
         case "acceptable": return { emojiName: "meh", color: "orange" };
         case "worn": return { emojiName: "frown", color: "red" };
     }

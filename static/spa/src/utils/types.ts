@@ -32,6 +32,24 @@ export const PaymentState = t.keyof({
     "errored-not-enough-funds": null
 })
 
+export const BookCategory = t.keyof({
+    "fiction": null,
+    "non-fiction": null,
+    "science-fiction": null,
+    "mystery": null,
+    "fantasy": null,
+    "biography": null,
+    "history": null,
+    "self-help": null,
+    "thriller": null,
+    "romance": null,
+    "children": null,
+    "poetry": null,
+    "horror": null,
+    "technology": null,
+    "business": null
+})
+
 export const PriceEur = new t.Type<Big, string, unknown>("PriceEur",
     (input: unknown): input is Big => input instanceof Big,
     (input, context) => {

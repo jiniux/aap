@@ -13,6 +13,7 @@ public record FullCatalogBookResult(
     String description,
     int publicationYear,
     String edition,
+    List<String> categories,
     List<Author> authors,
     Publisher publisher,
     List<Stock> stocks,

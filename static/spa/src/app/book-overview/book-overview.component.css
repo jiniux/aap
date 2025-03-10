@@ -287,3 +287,12 @@
 .book-overview .quantity-selector button:last-child {
   border-radius: 0 13px 13px 0;
 }
+
+
+.book-overview .fields .content.categories span:last-child:after {
+  content: '';
+}
+
+.book-overview .fields .content.categories span::after {
+  content: ', ';
+}

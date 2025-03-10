@@ -30,10 +30,10 @@ public class Author {
 
     @ManyToMany
     @JoinTable(
-        name = "catalog_book_authors",
+        name = "book_authors",
         joinColumns = @JoinColumn(name = "authorId"),
-        inverseJoinColumns = @JoinColumn(name = "catalogBookId"))
-    private List<CatalogBook> books;
+        inverseJoinColumns = @JoinColumn(name = "bookId"))
+    private List<Book> books;
 
     @Version
     private Long version;

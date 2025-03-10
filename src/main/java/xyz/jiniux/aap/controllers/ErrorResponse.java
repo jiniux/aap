@@ -108,4 +108,8 @@ public record ErrorResponse(String code, Object details) implements Serializable
     public static Object createStockPriceNotSet(String isbn, String stockFormat, String stockQuality) {
         return new ErrorResponse("STOCK_PRICE_NOT_SET", Map.of("isbn", isbn, "stockFormat", stockFormat, "stockQuality", stockQuality));
     }
+
+    public static Object createNoCategorySpecified() {
+        return new ErrorResponse("NO_CATEGORY_SPECIFIED", Map.of());
+    }
 }

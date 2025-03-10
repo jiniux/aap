@@ -7,5 +7,4 @@ public enum StockQuality {
     GOOD,
     ACCEPTABLE,
     WORN,
-    DIGITAL
 }

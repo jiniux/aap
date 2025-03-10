@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import * as t from "io-ts"
-import { PriceEur, StockFormat, StockQuality } from '../utils/types';
+import { BookCategory, PriceEur, StockFormat, StockQuality } from '../utils/types';
 import { map, Observable } from 'rxjs';
 import { API_URL } from '../constants';
 import { ensureValid } from '../ext/io-ts.ext';
@@ -68,7 +68,8 @@ const FullCatalogBookResult = t.type({
       url: t.string,
       format: StockFormat
     })
-  )
+  ),
+  categories: t.array(BookCategory)
 });
 
 export type FullCatalogBookResult = t.TypeOf<typeof FullCatalogBookResult>;

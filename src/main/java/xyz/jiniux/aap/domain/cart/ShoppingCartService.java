@@ -157,7 +157,7 @@ public class ShoppingCartService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public boolean clearShoppingCart(@NonNull String username, @NonNull List<ShoppingCart.Item> items, long lastVersion) {
+    public boolean clearShoppingCart(@NonNull String username, long lastVersion) {
         ShoppingCart shoppingCart = shoppingCartRepository.findCartByUsernameForUpdate(username).orElse(null);
 
         if (shoppingCart == null) {
